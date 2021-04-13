@@ -1,67 +1,80 @@
 # -*- coding: utf-8 -*-
 """
-Zerodha kiteconnect automated authentication
+Trading Robot - Zerodha Kite Connect Platform
 
-@author: Mayank Rasu (http://rasuquant.com/wp/)
+@author: Karthik Ramx (https://karthikramx.wordpress.com/)
 """
 
 from kiteconnect import KiteConnect
 from selenium import webdriver
+from config import *
 import time
+import os
 import pandas as pd
 import datetime as dt
 
+credentials_path = os.environ["HOMEPATH"] + "\\Desktop" + "\\cred impt" + "\\zrdh_lgn_cred"
+account_details_path = os.environ["HOMEPATH"] + "\\Desktop" + "\\cred impt" + "\\zrdh_acc_details"
+
+auth_details_path = credentials_path + "\\auth_details.txt"
+request_token_path = credentials_path + "\\request_token.txt"
+access_token_path = credentials_path + "\\access_token.txt"
+
+holdings_details_path = account_details_path + "\\holdings.txt"
+orders_details_path = account_details_path + "\\orders.txt"
+
 
 def autologin():
-    try:
-        token_path = "auth_details.txt"
-        key_secret = open(token_path, 'r').read().split()
-        kite = KiteConnect(api_key=key_secret[0])
-        print("\t\tKite Object created")
 
-        service = webdriver.chrome.service.Service('./chromedriver')
-        service.start()
-        options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')
-        options = options.to_capabilities()
-        print("\t\tLaunching Chrome Driver")
-        driver = webdriver.Remote(service.service_url, options)
-        driver.get(kite.login_url())
-        driver.implicitly_wait(10)
-        print("\t\tEntering credentials. Please wait.")
-        username = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[1]/input')
-        password = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/input')
-        username.send_keys(key_secret[2])
-        password.send_keys(key_secret[3])
-        driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[4]/button').click()
-        pin = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/div/input')
-        print("\t\tEntering PIN. Please wait.")
-        pin.send_keys(key_secret[4])
-        driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[3]/button').click()
-        time.sleep(10)
-        request_token = driver.current_url.split('=')[1].split('&action')[0]  # fails the string operation sometimes
-        print("\t\tREQUEST TOKEN:{}".format(request_token))
-        print("\t\tExtracted Request token")
-        print("\t\tSaving request token")
-        driver.quit()
-        if request_token == "login&status":
-            autologin()
-        with open('request_token.txt', 'w') as the_file:
-            the_file.write(request_token)
-    except:
-        driver.quit()
-        print("\t\tError in login process, trying again.")
-        autologin()
+    key_secret = open(auth_details_path, 'r').read().split()
+    kite = KiteConnect(api_key=key_secret[0])
+    print("\t\tKite Object created")
+
+    service = webdriver.chrome.service.Service('./chromedriver')
+    service.start()
+    options = webdriver.ChromeOptions()
+    if HEADLESS_MODE:
+        options.add_argument('--headless')
+    options = options.to_capabilities()
+    print("\t\tLaunching Chrome Driver")
+    driver = webdriver.Remote(service.service_url, options)
+    driver.set_window_position(BROWSER_X_POS, BROWSER_Y_POS)
+    driver.set_window_size(BROWSER_X_SIZE, BROWSER_Y_SIZE)
+    driver.get(kite.login_url())
+    driver.implicitly_wait(10)
+    print("\t\tEntering credentials. Please wait.")
+    username = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[1]/input')
+    password = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/input')
+    username.send_keys(key_secret[2])
+    password.send_keys(key_secret[3])
+    driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[4]/button').click()
+    pin = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/div/input')
+    print("\t\tEntering PIN. Please wait.")
+    pin.send_keys(key_secret[4])
+    driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[3]/button').click()
+    time.sleep(4)
+    print("\t\tCURRENT URL: {}".format(driver.current_url))
+
+    request_token = driver.current_url.split('=')[1].split('&action')[0]  # fails the string operation sometimes
+    print("\t\tREQUEST TOKEN: {}".format(request_token))
+
+    driver.quit()
+
+    with open(request_token_path, 'w') as the_file:
+        the_file.write(request_token)
+    print("\t\tREQUEST TOKEN: {} SAVED".format(request_token))
 
 
 
 def generate_access_token():
-    request_token = open("request_token.txt", 'r').read()
-    key_secret = open("auth_details.txt", 'r').read().split()
+    request_token = open(request_token_path, 'r').read()
+    key_secret = open(auth_details_path, 'r').read().split()
     kite = KiteConnect(api_key=key_secret[0])
     data = kite.generate_session(request_token, api_secret=key_secret[1])
-    with open('access_token.txt', 'w') as file:
+    print("\t\tACCESS  TOKEN: {}".format(data["access_token"]))
+    with open(access_token_path, 'w') as file:
         file.write(data["access_token"])
+        print("\t\tACCESS  TOKEN: {} SAVED".format(data["access_token"]))
 
 
 def get_all_instruments():
@@ -79,7 +92,7 @@ def get_all_NSE_instruments():
 def instrument_lookup(instrument_df, symbol):
     """Looks up instrument token for a given script from instrument dump"""
     try:
-        return instrument_df[instrument_df.tradingsymbol==symbol].instrument_token.values[0]
+        return instrument_df[instrument_df.tradingsymbol == symbol].instrument_token.values[0]
     except:
         return -1
 
@@ -87,7 +100,8 @@ def instrument_lookup(instrument_df, symbol):
 def fetch_historical_data(instrument_df, ticker, interval, duration):
     """extracts historical data and outputs in the form of dataframe"""
     instrument = instrument_lookup(instrument_df, ticker)
-    data = pd.DataFrame(kite.historical_data(instrument, dt.date.today()-dt.timedelta(duration), dt.date.today(), interval))
+    data = pd.DataFrame(
+        kite.historical_data(instrument, dt.date.today() - dt.timedelta(duration), dt.date.today(), interval))
     data.set_index("date", inplace=True)
     return data
 
@@ -125,12 +139,14 @@ def place_bracket_order(symbol, buy_sell, quantity, atr, price):
                      stoploss=int(3 * atr),
                      trailing_stoploss=2)
 
-#autologin()
-#generate_access_token()
-#exit()
+for i in range(1,5):
+    autologin()
+    generate_access_token()
+    print("\t\t TEST LOOP: {}".format(i))
+exit()
 
-access_token = open("access_token.txt", "r").read()
-key_secret = open("auth_details.txt", 'r').read().split()
+access_token = open(access_token_path, "r").read()
+key_secret = open(auth_details_path, 'r').read().split()
 kite = KiteConnect(api_key=key_secret[0])
 kite.set_access_token(access_token)
 
@@ -141,11 +157,11 @@ print(kite.ltp("NSE:IDFC"))
 for i in range(10):
     print(kite.ltp("NSE:IDFC"))
 
-#orders = kite.orders()
+# orders = kite.orders()
 holdings = kite.holdings()
 print(holdings)
 print("here")
-#instruments = kite.instruments()
-#login_url = kite.login_url()
-#duration = 2
-#interval = "5minute"
+# instruments = kite.instruments()
+# login_url = kite.login_url()
+# duration = 2
+# interval = "5minute"

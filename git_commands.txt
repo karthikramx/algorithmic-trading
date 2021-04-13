@@ -1,0 +1,12 @@
+Important git commands
+----------------------
+1. Clone repository: git clone link
+2. Add files to the local repo: git add -A
+3. Commit changes to the local repository: git commit -m� adding changes�
+4. Push changes to the remote repository: git push origin branch
+5. Get repo status: git status
+6. List branches: git branch
+7. Git creates a new branch: git branch new_branch_name
+8. Navigate to a different branch: git checkout branch_name
+9. To clone a particular branch: git clone link --branch branch_name
+10.Push changes to master from xbranch: git push origin develop:master

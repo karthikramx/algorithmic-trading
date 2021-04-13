@@ -1,0 +1,6 @@
+TODO
++ fix request token bug
++ add path definitions to avoid exposing authentication and token details
++ Add automatic dep-install scripts for windows, linux and mac os
+
+DONE

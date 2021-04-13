@@ -1,6 +1,0 @@
-tradingsymbol,exchange,instrument_token,isin,product,price,quantity,used_quantity,t1_quantity,realised_quantity,authorised_quantity,authorised_date,opening_quantity,collateral_quantity,collateral_type,discrepancy,average_price,last_price,close_price,pnl,day_change,day_change_percentage
-BIOCON,BSE,136325892,INE376G01013,CNC,0,12,0,0,12,0,2021-04-03 00:00:00,12,0,,False,399.35,410.3,410.75,131.39999999999986,-0.44999999999998863,-0.10955569080949205
-IDFCFIRSTB,NSE,2863105,INE092T01019,CNC,0,4,0,0,4,0,2021-04-03 00:00:00,4,0,,False,60.5,57.05,57.05,-13.800000000000011,0.0,0.0
-ITC,NSE,424961,INE154A01025,CNC,0,24,0,0,24,0,2021-04-03 00:00:00,24,0,,False,210.1,220.05,220.05,238.8000000000004,0.0,0.0
-ONGC,NSE,633601,INE213A01029,CNC,0,1,0,0,1,0,2021-04-03 00:00:00,1,0,,False,103.55,104.35,104.35,0.7999999999999972,0.0,0.0
-TATAMOTORS,NSE,884737,INE155A01022,CNC,0,10,0,0,10,0,2021-04-03 00:00:00,10,0,,False,299.1,307.75,307.75,86.49999999999977,0.0,0.0
