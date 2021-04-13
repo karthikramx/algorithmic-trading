@@ -10,7 +10,7 @@ class financial_calculator:
 
     def present_value(self, future_value, rate, time):
         return  round(future_value / ((1 + rate/100) ** time), 2)
-f =
+
     def least_difference(self,a,b,c):
         """Returns the smallest difference between two numbers"""
         return min(abs(a-b), abs(b-c), abs(c-a))
