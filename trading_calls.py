@@ -1,18 +1,9 @@
 
 from kiteconnect import KiteConnect
-import os
+from paths import *
 import pandas as pd
 import datetime as dt
-
-credentials_path = os.environ["HOMEPATH"] + "\\Desktop" + "\\cred impt" + "\\zrdh_lgn_cred"
-account_details_path = os.environ["HOMEPATH"] + "\\Desktop" + "\\cred impt" + "\\zrdh_acc_details"
-
-auth_details_path = credentials_path + "\\auth_details.txt"
-request_token_path = credentials_path + "\\request_token.txt"
-access_token_path = credentials_path + "\\access_token.txt"
-
-holdings_details_path = account_details_path + "\\holdings.txt"
-orders_details_path = account_details_path + "\\orders.txt"
+import time
 
 access_token = open(access_token_path, "r").read()
 key_secret = open(auth_details_path, 'r').read().split()
@@ -38,6 +29,13 @@ def instrument_lookup(instrument_df, symbol):
         return instrument_df[instrument_df.tradingsymbol == symbol].instrument_token.values[0]
     except:
         return -1
+
+def tokenLookup(instrument_df, symbol_list):
+    """Looks up instrument token for a given script from instrument dump"""
+    token_list = []
+    for symbol in symbol_list:
+        token_list.append(int(instrument_df[instrument_df.tradingsymbol == symbol].instrument_token.values[0]))
+    return token_list
 
 
 def fetch_historical_data(instrument_df, ticker, interval, duration):
@@ -81,3 +79,13 @@ def place_bracket_order(symbol, buy_sell, quantity, atr, price):
                      squareoff=int(6 * atr),
                      stoploss=int(3 * atr),
                      trailing_stoploss=2)
+
+
+#instrument_dump = kite.instruments("NSE")
+#instrument_df = pd.DataFrame(instrument_dump)
+#tickers = ["INFY", "ITC", "BIOCON"]
+#tokens = tokenLookup(instrument_df, tickers)
+
+for i in range(100):
+    print(kite.ltp(["NSE:ITC"]))
+    time.sleep(30)
