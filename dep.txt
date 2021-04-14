@@ -1,0 +1,3 @@
+selenium
+db-sqlite3
+pandas
