@@ -13,13 +13,13 @@ import os
 import sqlite3
 from paths import *
 
-# generate trading session
+# Generate trading session
 access_token = open(access_token_path, 'r').read()
 key_secret = open(auth_details_path, 'r').read().split()
 kite = KiteConnect(api_key=key_secret[0])
 kite.set_access_token(access_token)
 
-db = sqlite3.connect(database_path_2021)
+db = sqlite3.connect(database_path_2021 + "\\" + "tick-data-" + str(datetime.datetime.now().date()))
 
 
 def create_tables(tokens):
@@ -92,11 +92,11 @@ def on_connect(ws, response):
 
 while True:
     now = datetime.datetime.now()
-    if (now.hour >= 9 and now.minute >= 15):
+    if now.hour >= 9 and now.minute >= 15:
         kws.on_ticks = on_ticks
         kws.on_connect = on_connect
         kws.connect()
-    if (now.hour >= 15 and now.minute >= 30):
+    if now.hour >= 15 and now.minute >= 30:
         print("\t\tOutside trading hours")
         sys.exit()
 
