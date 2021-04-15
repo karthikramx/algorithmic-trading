@@ -39,6 +39,7 @@ def atr(DF,n):
 
 def rsi(df, n):
     "function to calculate RSI"
+
     delta = df["close"].diff().dropna()
     u = delta * 0
     d = u.copy()
@@ -50,6 +51,96 @@ def rsi(df, n):
     d = d.drop(d.index[:(n-1)])
     rs = u.ewm(com=n,min_periods=n).mean()/d.ewm(com=n,min_periods=n).mean()
     return 100 - 100 / (1+rs)
+
+def adx(DF,n):
+    "function to calculate ADX"
+    df2 = DF.copy()
+    df2['H-L']=abs(df2['high']-df2['low'])
+    df2['H-PC']=abs(df2['high']-df2['close'].shift(1))
+    df2['L-PC']=abs(df2['low']-df2['close'].shift(1))
+    df2['TR']=df2[['H-L','H-PC','L-PC']].max(axis=1,skipna=False)
+    df2['DMplus']=np.where((df2['high']-df2['high'].shift(1))>(df2['low'].shift(1)-df2['low']),df2['high']-df2['high'].shift(1),0)
+    df2['DMplus']=np.where(df2['DMplus']<0,0,df2['DMplus'])
+    df2['DMminus']=np.where((df2['low'].shift(1)-df2['low'])>(df2['high']-df2['high'].shift(1)),df2['low'].shift(1)-df2['low'],0)
+    df2['DMminus']=np.where(df2['DMminus']<0,0,df2['DMminus'])
+    TRn = []
+    DMplusN = []
+    DMminusN = []
+    TR = df2['TR'].tolist()
+    DMplus = df2['DMplus'].tolist()
+    DMminus = df2['DMminus'].tolist()
+    for i in range(len(df2)):
+        if i < n:
+            TRn.append(np.NaN)
+            DMplusN.append(np.NaN)
+            DMminusN.append(np.NaN)
+        elif i == n:
+            TRn.append(df2['TR'].rolling(n).sum().tolist()[n])
+            DMplusN.append(df2['DMplus'].rolling(n).sum().tolist()[n])
+            DMminusN.append(df2['DMminus'].rolling(n).sum().tolist()[n])
+        elif i > n:
+            TRn.append(TRn[i-1] - (TRn[i-1]/n) + TR[i])
+            DMplusN.append(DMplusN[i-1] - (DMplusN[i-1]/n) + DMplus[i])
+            DMminusN.append(DMminusN[i-1] - (DMminusN[i-1]/n) + DMminus[i])
+    df2['TRn'] = np.array(TRn)
+    df2['DMplusN'] = np.array(DMplusN)
+    df2['DMminusN'] = np.array(DMminusN)
+    df2['DIplusN']=100*(df2['DMplusN']/df2['TRn'])
+    df2['DIminusN']=100*(df2['DMminusN']/df2['TRn'])
+    df2['DIdiff']=abs(df2['DIplusN']-df2['DIminusN'])
+    df2['DIsum']=df2['DIplusN']+df2['DIminusN']
+    df2['DX']=100*(df2['DIdiff']/df2['DIsum'])
+    ADX = []
+    DX = df2['DX'].tolist()
+    for j in range(len(df2)):
+        if j < 2*n-1:
+            ADX.append(np.NaN)
+        elif j == 2*n-1:
+            ADX.append(df2['DX'][j-n+1:j+1].mean())
+        elif j > 2*n-1:
+            ADX.append(((n-1)*ADX[j-1] + DX[j])/n)
+    df2['ADX']=np.array(ADX)
+    return df2['ADX']
+
+def supertrend(DF,n,m):
+    """function to calculate Supertrend given historical candle data
+        n = n day ATR - usually 7 day ATR is used
+        m = multiplier - usually 2 or 3 is used"""
+    df = DF.copy()
+    df['ATR'] = atr(df,n)
+    df["B-U"]=((df['high']+df['low'])/2) + m*df['ATR']
+    df["B-L"]=((df['high']+df['low'])/2) - m*df['ATR']
+    df["U-B"]=df["B-U"]
+    df["L-B"]=df["B-L"]
+    ind = df.index
+    for i in range(n,len(df)):
+        if df['close'][i-1]<=df['U-B'][i-1]:
+            df.loc[ind[i],'U-B']=min(df['B-U'][i],df['U-B'][i-1])
+        else:
+            df.loc[ind[i],'U-B']=df['B-U'][i]
+    for i in range(n,len(df)):
+        if df['close'][i-1]>=df['L-B'][i-1]:
+            df.loc[ind[i],'L-B']=max(df['B-L'][i],df['L-B'][i-1])
+        else:
+            df.loc[ind[i],'L-B']=df['B-L'][i]
+    df['Strend']=np.nan
+    for test in range(n,len(df)):
+        if df['close'][test-1]<=df['U-B'][test-1] and df['close'][test]>df['U-B'][test]:
+            df.loc[ind[test],'Strend']=df['L-B'][test]
+            break
+        if df['close'][test-1]>=df['L-B'][test-1] and df['close'][test]<df['L-B'][test]:
+            df.loc[ind[test],'Strend']=df['U-B'][test]
+            break
+    for i in range(test+1,len(df)):
+        if df['Strend'][i-1]==df['U-B'][i-1] and df['close'][i]<=df['U-B'][i]:
+            df.loc[ind[i],'Strend']=df['U-B'][i]
+        elif  df['Strend'][i-1]==df['U-B'][i-1] and df['close'][i]>=df['U-B'][i]:
+            df.loc[ind[i],'Strend']=df['L-B'][i]
+        elif df['Strend'][i-1]==df['L-B'][i-1] and df['close'][i]>=df['L-B'][i]:
+            df.loc[ind[i],'Strend']=df['L-B'][i]
+        elif df['Strend'][i-1]==df['L-B'][i-1] and df['close'][i]<=df['L-B'][i]:
+            df.loc[ind[i],'Strend']=df['U-B'][i]
+    return df['Strend']
 
 # ohlc = fetchOHLC("ICICIBANK","5minute",5)
 # macd = MACD(ohlc,12,26,9)
