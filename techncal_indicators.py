@@ -142,5 +142,38 @@ def supertrend(DF,n,m):
             df.loc[ind[i],'Strend']=df['U-B'][i]
     return df['Strend']
 
-# ohlc = fetchOHLC("ICICIBANK","5minute",5)
-# macd = MACD(ohlc,12,26,9)
+
+def hammer(ohlc_df):
+    """returns dataframe with hammer candle column"""
+    df = ohlc_df.copy()
+    df["hammer"] = (((df["high"] - df["low"])>3*(df["open"] - df["close"])) & \
+                   ((df["close"] - df["low"])/(.001 + df["high"] - df["low"]) > 0.6) & \
+                   ((df["open"] - df["low"])/(.001 + df["high"] - df["low"]) > 0.6)) & \
+                   (abs(df["close"] - df["open"]) > 0.1* (df["high"] - df["low"]))
+    return df
+
+def maru_bozu(ohlc_df):
+    """returns dataframe with maru bozu candle column"""
+    df = ohlc_df.copy()
+    avg_candle_size = abs(df["close"] - df["open"]).median()
+    df["h-c"] = df["high"]-df["close"]
+    df["l-o"] = df["low"]-df["open"]
+    df["h-o"] = df["high"]-df["open"]
+    df["l-c"] = df["low"]-df["close"]
+    df["maru_bozu"] = np.where((df["close"] - df["open"] > 2*avg_candle_size) & \
+                               (df[["h-c","l-o"]].max(axis=1) < 0.005*avg_candle_size),"maru_bozu_green",
+                               np.where((df["open"] - df["close"] > 2*avg_candle_size) & \
+                               (abs(df[["h-o","l-c"]]).max(axis=1) < 0.005*avg_candle_size),"maru_bozu_red",False))
+    df.drop(["h-c","l-o","h-o","l-c"],axis=1,inplace=True)
+    return df
+
+
+def shooting_star(ohlc_df):
+    """returns dataframe with shooting star candle column"""
+    df = ohlc_df.copy()
+    df["sstar"] = (((df["high"] - df["low"])>3*(df["open"] - df["close"])) & \
+                   ((df["high"] - df["close"])/(.001 + df["high"] - df["low"]) > 0.6) & \
+                   ((df["high"] - df["open"])/(.001 + df["high"] - df["low"]) > 0.6)) & \
+                   (abs(df["close"] - df["open"]) > 0.1* (df["high"] - df["low"]))
+    return df
+
