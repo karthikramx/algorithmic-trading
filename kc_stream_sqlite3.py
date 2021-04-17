@@ -2,7 +2,7 @@
 """
 Zerodha Kite Connect - Storing tick level data in db
 
-@author: Karthik Ram (https://karthikramx.wordpress.com/)
+@developer: Karthik Ram (https://karthikramx.wordpress.com/)
 """
 
 from kiteconnect import KiteTicker, KiteConnect
