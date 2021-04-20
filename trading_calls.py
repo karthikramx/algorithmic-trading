@@ -1,8 +1,8 @@
-
 from kiteconnect import KiteConnect
 from paths import *
 import pandas as pd
 import datetime as dt
+from config import *
 import time
 
 access_token = open(access_token_path, "r").read()
@@ -29,6 +29,7 @@ def instrument_lookup(instrument_df, symbol):
         return instrument_df[instrument_df.tradingsymbol == symbol].instrument_token.values[0]
     except:
         return -1
+
 
 def tokenLookup(instrument_df, symbol_list):
     """Looks up instrument token for a given script from instrument dump"""
@@ -81,11 +82,34 @@ def place_bracket_order(symbol, buy_sell, quantity, atr, price):
                      trailing_stoploss=2)
 
 
-#instrument_dump = kite.instruments("NSE")
-#instrument_df = pd.DataFrame(instrument_dump)
-#tickers = ["INFY", "ITC", "BIOCON"]
-#tokens = tokenLookup(instrument_df, tickers)
+# instrument_dump = kite.instruments("NSE")
+# instrument_df = pd.DataFrame(instrument_dump)
+# tickers = ["INFY", "ITC", "BIOCON"]
+# tokens = tokenLookup(instrument_df, tickers)
 
-for i in range(100):
-    print(kite.ltp(["NSE:ITC"]))
-    time.sleep(30)
+# for i in range(100):
+#    print(kite.ltp(["NSE:ITC"]))
+#    time.sleep(30)
+
+while True:
+    holding_tries = position_tries = 0
+    begin_scan_time = time.time()
+    while holding_tries < MAX_TRIES:
+        try:
+            holdings_dataframe = pd.DataFrame(kite.holdings())
+            print(holdings_dataframe)
+            break
+        except:
+            print("\t\tFailed to retrieve holdings data, trying again")
+
+    while position_tries < MAX_TRIES:
+        try:
+            positions_dataframe = pd.DataFrame(kite.positions())
+            print(positions_dataframe)
+            break
+        except:
+            print("\t\tFailed to retrieve holdings data, trying again")
+
+    stop_scan_time = time.time()
+    time.sleep(10-(stop_scan_time - begin_scan_time))
+    print(dt.datetime.now())
