@@ -1,6 +1,7 @@
 TODO
 + fix request token bug
-+ add path definitions to avoid exposing authentication and token details
 + Add automatic dep-install scripts for windows, linux and mac os
++ make one order buy/sell from API - need to understand all order types and do it carefully
 
 DONE
++ add path definitions to avoid exposing authentication and token details

@@ -2,7 +2,7 @@
 """
 Trading Robot - Zerodha Kite Connect Platform
 
-@author: Karthik Ramx (https://karthikramx.wordpress.com/)
+@developer: Karthik Ramx (https://karthikramx.wordpress.com/)
 """
 
 from kiteconnect import KiteConnect

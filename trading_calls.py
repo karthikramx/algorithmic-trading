@@ -48,6 +48,25 @@ def fetch_historical_data(instrument_df, ticker, interval, duration):
     return data
 
 
+def fetchOHLCExtended(ticker,inception_date, interval):
+    """extracts historical data and outputs in the form of dataframe
+       inception date string format - dd-mm-yyyy"""
+    instrument = instrumentLookup(instrument_df,ticker)
+    from_date = dt.datetime.strptime(inception_date, '%d-%m-%Y')
+    to_date = dt.date.today()
+    data = pd.DataFrame(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
+    while True:
+        if from_date.date() >= (dt.date.today() - dt.timedelta(100)):
+            data = data.append(pd.DataFrame(kite.historical_data(instrument,from_date,dt.date.today(),interval)),ignore_index=True)
+            break
+        else:
+            to_date = from_date + dt.timedelta(100)
+            data = data.append(pd.DataFrame(kite.historical_data(instrument,from_date,to_date,interval)),ignore_index=True)
+            from_date = to_date
+    data.set_index("date",inplace=True)
+    return data
+
+
 def place_market_order(symbol, buy_sell, quantity):
     # Place an intraday market order on NSE
     if buy_sell == "buy":
@@ -94,6 +113,16 @@ def place_bracket_order(symbol, buy_sell, quantity, atr, price):
 while True:
     holding_tries = position_tries = 0
     begin_scan_time = time.time()
+
+
+    while holding_tries < MAX_TRIES:
+        try:
+            holdings_dataframe = pd.DataFrame(kite.orders())
+            print(holdings_dataframe)
+            break
+        except:
+            print("\t\tFailed to retrieve orders data, trying again")
+
     while holding_tries < MAX_TRIES:
         try:
             holdings_dataframe = pd.DataFrame(kite.holdings())
@@ -108,8 +137,8 @@ while True:
             print(positions_dataframe)
             break
         except:
-            print("\t\tFailed to retrieve holdings data, trying again")
+            print("\t\tFailed to retrieve positions data, trying again")
 
     stop_scan_time = time.time()
-    time.sleep(10-(stop_scan_time - begin_scan_time))
+    time.sleep(5-(stop_scan_time - begin_scan_time))
     print(dt.datetime.now())
