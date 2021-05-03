@@ -1,9 +1,9 @@
 # gui global config variables
 HEADLESS_MODE = False
-BROWSER_X_POS = 0
-BROWSER_Y_POS = 700
-BROWSER_X_SIZE = 600
-BROWSER_Y_SIZE = 600
+BROWSER_X_POS = 750
+BROWSER_Y_POS = 0
+BROWSER_X_SIZE = 800
+BROWSER_Y_SIZE = 900
 
 # algo global config variables
 MAX_TRIES = 10
