@@ -40,12 +40,16 @@ def scrap_moneycontrol_sectors_ltp():
     driver.get(url)
     driver.implicitly_wait(10)
     time.sleep(1)
+    i = 0
     for sector in sector_list:
+        i = i + 1
         try:
             print("Clicking on: {}".format(sector))
-            time.sleep(2)
+            time.sleep(1)
+            print("Scroll Value:{}".format(str(i*27.4)))
+            driver.execute_script("window.scrollTo(0,{})".format(str(i*27.4)))
+            time.sleep(1)
             driver.find_element_by_link_text(sector).click()
-
             #Driver.findElement(By.xpath( // a[ @ href = '/docs/configuration']")).click();
 
             time.sleep(2)
