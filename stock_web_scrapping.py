@@ -1,28 +1,28 @@
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
 
-page = requests.get("https://www.moneycontrol.com/stocks/marketinfo/marketcap/bse/travel-services.html")
+url = "https://www.moneycontrol.com/stocks/marketinfo/marketcap/bse/travel-services.html"
+page = requests.get(url)
+page_content = page.content
+
 soup = BeautifulSoup(page.content, 'html.parser')
+mydivs = soup.find('div', {"class": 'lftmenu'})
+list_options = mydivs.findAll('li')
 
-# print the entire html document in a pretty format
-# print(soup.prettify())
+sector_list = []
 
-print(soup.title.parent.name)
-x = soup.find_all("table")
-print(x)
+for li in list_options:
+    sector_list.append(li.string)
 
-table = soup.table
+
+print(soup.prettify())
+all_li = soup.find_all('ul')
+
+
 table_rows = soup.find_all('tr')
-number_of_rows = len(table_rows)
-first_row = table_rows[3]
-cell_in_row = first_row.find_all("th")
 
-for j, cell in enumerate(cell_in_row):
-    print(j, list(enumerate(cell))[0][1])
-
-table_cell = first_row.td
-print(table_cell)
-children = table.children
-
-
-print("A")
+page_df = pd.read_html(url)
+table_df = page_df[1]
+table_df["Company Name"] = table_df["Company Name"].apply(lambda x: x.split(" Add to Watchlist")[0])
+print(table_df)
