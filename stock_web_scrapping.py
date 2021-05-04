@@ -17,16 +17,15 @@ list_options = mydivs.findAll('li')
 sector_list = []
 
 for li in list_options:
-    # x=li.find('a')
-    # href = x.attrs
-    # link = href["href"]
-    # print(type(li))
     sector_list.append(li.string)
 
 print(sector_list)
 
+ltp_data = pd.DataFrame()
+
 
 def scrap_moneycontrol_sectors_ltp():
+    global ltp_data
     service = webdriver.chrome.service.Service('./chromedriver')
     service.start()
     options = webdriver.ChromeOptions()
@@ -40,51 +39,34 @@ def scrap_moneycontrol_sectors_ltp():
     driver.get(url)
     driver.implicitly_wait(10)
     time.sleep(1)
-    i = 0
+
     for sector in sector_list:
-        i = i + 1
         try:
             print("Clicking on: {}".format(sector))
-            time.sleep(1)
-            print("Scroll Value:{}".format(str(i*27.4)))
-            driver.execute_script("window.scrollTo(0,{})".format(str(i*27.4)))
-            time.sleep(1)
+            element = driver.find_element_by_link_text(sector)
+            driver.execute_script("arguments[0].scrollIntoView();", element)
             driver.find_element_by_link_text(sector).click()
-            #Driver.findElement(By.xpath( // a[ @ href = '/docs/configuration']")).click();
-
-            time.sleep(2)
             WebDriverWait(driver, 30)
+
+            page_df = pd.read_html(driver.current_url)
+            table_df = page_df[1]
+            table_df["Company Name"] = table_df["Company Name"].apply(lambda x: x.split(" Add to Watchlist")[0])
+            print(table_df)
+            ltp_data = ltp_data.append(table_df)
+            print("---------------------------------------------------------------------------------------------------")
+            print(ltp_data)
+            print("---------------------------------------------------------------------------------------------------")
+
 
         except Exception as e:
             print("Failed to retrieve:{}".format(sector))
             print("Exception:{}".format(e))
 
-    """
-    driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[4]/button').click()
-
-    pin = driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[2]/div/input')
-    print("\t\tEntering PIN. Please wait.")
-    pin.send_keys(key_secret[4])
-    driver.find_element_by_xpath('/html/body/div[1]/div/div[2]/div[1]/div/div/div[2]/form/div[3]/button').click()
-    time.sleep(4)
-    print("\t\tCURRENT URL: {}".format(driver.current_url))
-
-    request_token = driver.current_url.split('=')[1].split('&action')[0]  # fails the string operation sometimes
-    print("\t\tREQUEST TOKEN: {}".format(request_token))
-
-    driver.quit()
-
-    with open(request_token_path, 'w') as the_file:
-        the_file.write(request_token)
-    print("\t\tREQUEST TOKEN: {} SAVED".format(request_token))
-    """
     driver.quit()
 
 
 scrap_moneycontrol_sectors_ltp()
+ltp_data.to_csv('money_control_ltp.csv')
 
 
-page_df = pd.read_html(url)
-table_df = page_df[1]
-table_df["Company Name"] = table_df["Company Name"].apply(lambda x: x.split(" Add to Watchlist")[0])
-print(table_df)
+print(ltp_data)
