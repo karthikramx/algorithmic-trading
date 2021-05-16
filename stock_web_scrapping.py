@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from config import *
 import time
 
+
 url = "https://www.moneycontrol.com/stocks/marketinfo/marketcap/bse/index.html"
 page = requests.get(url)
 page_content = page.content
