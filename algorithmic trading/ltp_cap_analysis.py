@@ -1,6 +1,6 @@
 import pandas as pd
 
-ltp = pd.read_csv('money_control_ltp.csv', index_col=[0])
+ltp = pd.read_csv('../market analysis/money_control_ltp.csv', index_col=[0])
 # ltp.sort_index()
 ltp = ltp[~ltp['Company Name'].str.contains("No Data Available")]
 ltp.to_csv('money_control_ltpx.csv')
