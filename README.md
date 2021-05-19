@@ -1,4 +1,4 @@
-# Trading-Robot
+# Algorithmic Trading
 This is code base for an algorithmic trading bot using Zerodha Kite Connect API and python
 
 ### Project Architecture
