@@ -9,7 +9,6 @@ from kiteconnect import KiteTicker, KiteConnect
 import datetime
 import sys
 import pandas as pd
-import os
 import sqlite3
 from paths import *
 
