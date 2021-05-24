@@ -4,7 +4,6 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-
 sns.set_theme()
 sns.set_context("paper")
 
@@ -12,6 +11,8 @@ sns.set_context("paper")
 class technical_indicators:
     def __init__(self):
         print("technical indicators class initialized")
+        self.rename_index = {0: "instrument", 1: "date", 2: "time", 3: "open", 4: "high", 5: "low", 6: "close",
+                             7: "volume", 8: "x"}
 
     def MACD(self, DF, a=12, b=26, c=9):
         """function to calculate MACD
@@ -91,40 +92,41 @@ class technical_indicators:
         df['ATR'] = df['TR'].ewm(com=n, min_periods=n).mean()
         return df['ATR']
 
+    def get_minute_data(self, month="MAY", days_of_month=None, instrument_name=None):
+        hist_data = pd.DataFrame()
+        if all(1 <= ele <= 31 for ele in days_of_month):
+            try:
+                for i in range(len(days_of_month)):
+                    folder_name = str(days_of_month[i]) + str(month)
+                    data_path = os.environ["HOMEPATH"] + "\\Desktop\\algorithmic-trading\\data\\{}\\{}.txt".format(
+                        folder_name, instrument_name)
+                    print("Extracting from: {}".format(data_path))
+                    minute_data = pd.read_csv(data_path, header=None)
 
-acc_path = os.environ["HOMEPATH"] + "\\Desktop" + "\\algorithmic-trading" + "\\data" + "\\21MAY" + "\\ACC.txt"
+                    minute_data = minute_data.rename(columns=self.rename_index)
+                    minute_data["date"] = minute_data["date"].astype(str)
+                    minute_data["time"] = minute_data["time"].astype(str)
+                    date = minute_data.iloc[[0], [1]]['date'][0]
+                    minute_data["time"] = pd.to_datetime((minute_data['date']) + ' ' + (minute_data['time']))
+                    minute_data.drop("date", axis=1, inplace=True)
+                    minute_data = minute_data.rename(columns={"time": "date - time"})
+                    minute_data = minute_data[~(minute_data['date - time'] > '{} 15:30'.format(date))]
+                    minute_data = minute_data[~(minute_data['date - time'] < '{} 09:15'.format(date))]
+                    # minute_data['date - time'] = minute_data['date - time'].astype('str')
+                    hist_data = hist_data.append(minute_data)
+            except Exception as e:
+                print("Data not found: {}".format(e))
+        return hist_data
 
-acc_data = pd.read_csv(acc_path, header=None, parse_dates=[2])
-
-a = acc_data.columns
-print(acc_data.columns)
-
-rename_index = {0: "instrument", 1: "date", 2: "date - time", 3: "open", 4: "high", 5: "low", 6: "close",
-                7: "volume", 8: "x"}
-
-acc_data = acc_data.rename(columns=rename_index)
-acc_data.drop("date", axis=1, inplace=True)
-acc_data = acc_data[~(acc_data['date - time'] > '2021-05-24 15:30')]
-acc_data = acc_data[~(acc_data['date - time'] < '2021-05-24 09:15')]
 
 ti = technical_indicators()
+may_acc_data = ti.get_minute_data(days_of_month=[20, 21], instrument_name="ACC")
+print("debug")
 
-acc_data_macd = ti.MACD(acc_data)
+
+acc_data_macd = ti.MACD(may_acc_data)
 
 sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["MACD"], color="g")
 ax2 = plt.twinx()
 sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["Signal"], color="b", ax=ax2)
 plt.show()
-
-acc_data.info()
-print("debug")
-
-# todo
-# make and plot rsi
-# make and plot supertrend
-# make and plot renko
-# clear all tax/zerodha charges/intra day and cnc based questions/ -- know the game
-# feed time series data into the decision maker and calculate returns based on decisions
-# test placing trades - all about buy/sell/intraday/stop-loss/trailing stop loss/
-# placing cnc orders inorder to get continuiing returns no matter what - sell when you get a 2000 return
-# but you will have a stop loss in place and check if

@@ -2,6 +2,16 @@ TODO
 + fix request token bug
 + Add automatic dep-install scripts for windows, linux and mac os
 + make one order buy/sell from API - need to understand all order types and do it carefully
++ take 10 day data and perform historical checks for buy low sell high
++ make and plot rsi
++ make and plot supertrend
++ make and plot renko
++ clear all tax/zerodha charges/intra day and cnc based questions/ -- know the game
++ feed time series data into the decision maker and calculate returns based on decisions
++ test placing trades - all about buy/sell/intraday/stop-loss/trailing stop loss/
++ placing cnc orders inorder to get continuiing returns no matter what - sell when you get a 2000 return
++ but you will have a stop loss in place and check if
+
 
 DONE
 + add path definitions to avoid exposing authentication and token details
