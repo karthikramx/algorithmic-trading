@@ -5,3 +5,4 @@ TODO
 
 DONE
 + add path definitions to avoid exposing authentication and token details
++ make and plot macd - 1 minute date

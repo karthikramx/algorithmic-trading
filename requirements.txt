@@ -1,3 +1,11 @@
-selenium
+selenium~=3.141.0
 db-sqlite3
-pandas
+pandas~=1.2.4
+
+seaborn~=0.11.1
+matplotlib~=3.3.2
+requests~=2.25.1
+bs4~=0.0.1
+beautifulsoup4~=4.9.3
+kiteconnect~=3.9.2
+numpy~=1.19.2
