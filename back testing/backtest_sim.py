@@ -83,12 +83,68 @@ class technical_indicators:
         df['rsi'] = 100 - 100 / (1 + rs)
         return df
 
+    def supertrend(self, DF, n, m):
+        """function to calculate Supertrend given historical candle data
+            n = n day ATR - usually 7 day ATR is used
+            m = multiplier - usually 2 or 3 is used"""
+        df = DF.copy()
+        df['ATR'] = self.atr(df, n)
+        df["B-U"] = ((df['high'] + df['low']) / 2) + m * df['ATR']
+        df["B-L"] = ((df['high'] + df['low']) / 2) - m * df['ATR']
+        df["U-B"] = df["B-U"]
+        df["L-B"] = df["B-L"]
+        ind = df.index
+        for i in range(n, len(df)):
+            if df['close'][i - 1] <= df['U-B'][i - 1]:
+                df.loc[ind[i], 'U-B'] = min(df['B-U'][i], df['U-B'][i - 1])
+            else:
+                df.loc[ind[i], 'U-B'] = df['B-U'][i]
+        for i in range(n, len(df)):
+            if df['close'][i - 1] >= df['L-B'][i - 1]:
+                df.loc[ind[i], 'L-B'] = max(df['B-L'][i], df['L-B'][i - 1])
+            else:
+                df.loc[ind[i], 'L-B'] = df['B-L'][i]
+        df['Strend'] = np.nan
+        for test in range(n, len(df)):
+            if df['close'][test - 1] <= df['U-B'][test - 1] and df['close'][test] > df['U-B'][test]:
+                df.loc[ind[test], 'Strend'] = df['L-B'][test]
+                break
+            if df['close'][test - 1] >= df['L-B'][test - 1] and df['close'][test] < df['L-B'][test]:
+                df.loc[ind[test], 'Strend'] = df['U-B'][test]
+                break
+        for i in range(test + 1, len(df)):
+            if df['Strend'][i - 1] == df['U-B'][i - 1] and df['close'][i] <= df['U-B'][i]:
+                df.loc[ind[i], 'Strend'] = df['U-B'][i]
+            elif df['Strend'][i - 1] == df['U-B'][i - 1] and df['close'][i] >= df['U-B'][i]:
+                df.loc[ind[i], 'Strend'] = df['L-B'][i]
+            elif df['Strend'][i - 1] == df['L-B'][i - 1] and df['close'][i] >= df['L-B'][i]:
+                df.loc[ind[i], 'Strend'] = df['L-B'][i]
+            elif df['Strend'][i - 1] == df['L-B'][i - 1] and df['close'][i] <= df['L-B'][i]:
+                df.loc[ind[i], 'Strend'] = df['U-B'][i]
+        return df
+
+    def atr(self, DF, n):
+        """function to calculate True Range and Average True Range"""
+        df = DF.copy()
+        df['H-L'] = abs(df['high'] - df['low'])
+        df['H-PC'] = abs(df['high'] - df['close'].shift(1))
+        df['L-PC'] = abs(df['low'] - df['close'].shift(1))
+        df['TR'] = df[['H-L', 'H-PC', 'L-PC']].max(axis=1, skipna=False)
+        df['ATR'] = df['TR'].ewm(com=n, min_periods=n).mean()
+        return df['ATR']
+
 
 class backtest_simulation:
-    def __init__(self):
+    def __init__(self, df):
         self.ti = technical_indicators()
+        self.buy_price = 0
+        self.sell_price = 0
         self.action = "RTB"
         self.gains = []
+        self.df = df
+        self.df_rsi = self.ti.rsi(df, 14)
+        self.df_macd = self.ti.MACD(df)
+        self.dt_supertrend = self.ti.supertrend(df, n=7, m=2)
 
     def checks(self, df):
         print("Length of df:{}".format(len(df)))
@@ -96,20 +152,17 @@ class backtest_simulation:
         print("Length of df_macd:{}".format(len(self.df_macd)))
 
     def buy_sell(self, df):
-        self.df_rsi = self.ti.rsi(df, 14)
-        self.df_macd = self.ti.MACD(df)
-        self.buy_price = 0
-        self.sell_price = 0
-
         macd_buffer = [0 * 5]
         signal_buffer = [0 * 5]
         rsi_buffer = [0 * 5]
 
         for tick in range(len(df)):
             try:
-                rsi_value = self.df_rsi.loc[df['date - time'] == df['date - time'][tick]]['rsi'].to_list()[0]
-                macd_value = self.df_macd.loc[df['date - time'] == df['date - time'][tick]]['MACD'].to_list()[0]
-                signal_value = self.df_macd.loc[df['date - time'] == df['date - time'][tick]]['Signal'].to_list()[0]
+                rsi_value = self.df_rsi.loc[self.df['date - time'] == self.df['date - time'][tick]]['rsi'].to_list()[0]
+                macd_value = self.df_macd.loc[self.df['date - time'] == self.df['date - time'][tick]]['MACD'].to_list()[
+                    0]
+                signal_value = \
+                self.df_macd.loc[self.df['date - time'] == self.df['date - time'][tick]]['Signal'].to_list()[0]
             except IndexError as e:
                 signal_value = np.NAN
                 macd_value = np.NAN
@@ -127,17 +180,17 @@ class backtest_simulation:
 
             if self.action == "RTB":
                 if macd_mean > signal_mean:
-                    self.buy_price = df.loc[df['date - time'] == df['date - time'][tick]]['close'].to_list()[0]
+                    self.buy_price = self.df.loc[self.df['date - time'] == self.df['date - time'][tick]]['close'].to_list()[0]
                     self.action = "RTS"
                     buy_day = df['date - time'][tick]
-                    print("BUY DAY: {}".format(df['date - time'][tick]))
+                    print("BUY DAY: {}".format(self.df['date - time'][tick]))
 
             elif self.action == "RTS":
-                current_price = df.loc[df['date - time'] == df['date - time'][tick]]['open'].to_list()[0]
-                days =  df['date - time'][tick] - buy_day
+                current_price = self.df.loc[self.df['date - time'] == self.df['date - time'][tick]]['open'].to_list()[0]
+                days = self.df['date - time'][tick] - buy_day
                 if (macd_mean > signal_mean) and (current_price > self.buy_price) and days.days > 2:
-                    self.sell_price = df.loc[df['date - time'] == df['date - time'][tick]]['close'].to_list()[0]
-                    print("SELL DAY: {}".format(df['date - time'][tick]))
+                    self.sell_price = self.df.loc[self.df['date - time'] == df['date - time'][tick]]['close'].to_list()[0]
+                    print("SELL DAY: {}".format(self.df['date - time'][tick]))
                     print("Days: {}".format(days.days))
                     print("bought at: {}".format(self.buy_price))
                     print("sold at: {}".format(self.sell_price))
@@ -145,14 +198,13 @@ class backtest_simulation:
                     self.gains.append(((self.sell_price / self.buy_price) - 1) * 1200000)
                     self.action = "RTB"
 
-
-
         print("Gains aggregate: {}".format(sum(self.gains)))
 
 
 dh = data_handler()
-bs = backtest_simulation()
+
 month_days = ['03', '04', '05', '06', '07', '10', '11', '12', '14', '17', '18', '19', '20',
               '21', '24', '25', '26', '27', '28', '31']
 may_acc_data = dh.get_minute_data(days_of_month=month_days, instrument_name="ITC")
-bs.buy_sell(may_acc_data)
+bs = backtest_simulation(may_acc_data)
+bs.buy_sell()
