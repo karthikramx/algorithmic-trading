@@ -8,6 +8,36 @@ sns.set_theme()
 sns.set_context("paper")
 
 
+class data_handler:
+    def __init__(self):
+        pass
+
+    def get_minute_data(self, month="MAY", days_of_month=None, instrument_name=None):
+        hist_data = pd.DataFrame()
+        if all(1 <= ele <= 31 for ele in days_of_month):
+            try:
+                for i in range(len(days_of_month)):
+                    folder_name = str(days_of_month[i]) + str(month)
+                    data_path = os.environ["HOMEPATH"] + "\\Desktop\\algorithmic-trading\\data\\{}\\{}.txt".format(
+                        folder_name, instrument_name)
+                    print("Extracting from: {}".format(data_path))
+                    minute_data = pd.read_csv(data_path, header=None)
+
+                    minute_data = minute_data.rename(columns=self.rename_index)
+                    minute_data["date"] = minute_data["date"].astype(str)
+                    minute_data["time"] = minute_data["time"].astype(str)
+                    date = minute_data.iloc[[0], [1]]['date'][0]
+                    minute_data["time"] = pd.to_datetime((minute_data['date']) + ' ' + (minute_data['time']))
+                    minute_data.drop("date", axis=1, inplace=True)
+                    minute_data = minute_data.rename(columns={"time": "date - time"})
+                    minute_data = minute_data[~(minute_data['date - time'] > '{} 15:30'.format(date))]
+                    minute_data = minute_data[~(minute_data['date - time'] < '{} 09:15'.format(date))]
+                    hist_data = hist_data.append(minute_data)
+            except Exception as e:
+                print("Data not found: {}".format(e))
+        return hist_data
+
+
 class technical_indicators:
     def __init__(self):
         print("technical indicators class initialized")
@@ -92,41 +122,21 @@ class technical_indicators:
         df['ATR'] = df['TR'].ewm(com=n, min_periods=n).mean()
         return df['ATR']
 
-    def get_minute_data(self, month="MAY", days_of_month=None, instrument_name=None):
-        hist_data = pd.DataFrame()
-        if all(1 <= ele <= 31 for ele in days_of_month):
-            try:
-                for i in range(len(days_of_month)):
-                    folder_name = str(days_of_month[i]) + str(month)
-                    data_path = os.environ["HOMEPATH"] + "\\Desktop\\algorithmic-trading\\data\\{}\\{}.txt".format(
-                        folder_name, instrument_name)
-                    print("Extracting from: {}".format(data_path))
-                    minute_data = pd.read_csv(data_path, header=None)
 
-                    minute_data = minute_data.rename(columns=self.rename_index)
-                    minute_data["date"] = minute_data["date"].astype(str)
-                    minute_data["time"] = minute_data["time"].astype(str)
-                    date = minute_data.iloc[[0], [1]]['date'][0]
-                    minute_data["time"] = pd.to_datetime((minute_data['date']) + ' ' + (minute_data['time']))
-                    minute_data.drop("date", axis=1, inplace=True)
-                    minute_data = minute_data.rename(columns={"time": "date - time"})
-                    minute_data = minute_data[~(minute_data['date - time'] > '{} 15:30'.format(date))]
-                    minute_data = minute_data[~(minute_data['date - time'] < '{} 09:15'.format(date))]
-                    # minute_data['date - time'] = minute_data['date - time'].astype('str')
-                    hist_data = hist_data.append(minute_data)
-            except Exception as e:
-                print("Data not found: {}".format(e))
-        return hist_data
 
 
 ti = technical_indicators()
 may_acc_data = ti.get_minute_data(days_of_month=[20, 21], instrument_name="ACC")
 print("debug")
 
-
 acc_data_macd = ti.MACD(may_acc_data)
+acc_data_macd_rsi = ti.rsi(may_acc_data, 14)
+may_acc_data.loc[:, 'RSI'] = acc_data_macd_rsi.reset_index(drop=True)
 
-sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["MACD"], color="g")
-ax2 = plt.twinx()
-sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["Signal"], color="b", ax=ax2)
+may_acc_data.plot('date - time', 'RSI')
 plt.show()
+
+#fig, axs = plt.subplots(nrows=2)
+#sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["MACD"], color="g")
+#ax2 = plt.twinx()
+#sns.lineplot(x=acc_data_macd["date - time"], y=acc_data_macd["Signal"], color="b", ax=ax2)
