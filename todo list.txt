@@ -12,6 +12,10 @@ TODO
 + placing cnc orders inorder to get continuiing returns no matter what - sell when you get a 2000 return
 + but you will have a stop loss in place and check if
 
+BUGS
++ chrome driver version different
++
+
 
 DONE
 + add path definitions to avoid exposing authentication and token details

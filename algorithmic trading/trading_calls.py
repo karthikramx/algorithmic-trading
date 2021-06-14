@@ -109,7 +109,7 @@ def place_bracket_order(symbol, buy_sell, quantity, atr, price):
 # for i in range(100):
 #    print(kite.ltp(["NSE:ITC"]))
 #    time.sleep(30)
-
+"""
 while True:
     holding_tries = position_tries = 0
     begin_scan_time = time.time()
@@ -142,3 +142,5 @@ while True:
     stop_scan_time = time.time()
     time.sleep(5-(stop_scan_time - begin_scan_time))
     print(dt.datetime.now())
+"""
+

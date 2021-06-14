@@ -14,8 +14,6 @@ import pandas as pd
 import datetime as dt
 
 
-
-
 def autologin():
 
     key_secret = open(auth_details_path, 'r').read().split()
