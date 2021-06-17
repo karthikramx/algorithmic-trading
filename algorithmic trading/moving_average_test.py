@@ -17,7 +17,7 @@ month = dt.datetime.now().month
 day = dt.datetime.now().day
 
 start_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=15, second=00)
-end_time = dt.datetime(year=2021, month=6, day=14, hour=15, minute=15, second=00)
+end_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=15, second=00)
 
 
 def get_holdings_info():
@@ -75,23 +75,34 @@ def place_cnc_order(symbol, buy_sell, quantity):
                      variety=kite.VARIETY_REGULAR)
 
 
+
 instrument_dump = kite.instruments("NSE")
 instrument_df = pd.DataFrame(instrument_dump)
 tickers = my_instruments
 tokens = tokenLookup(instrument_df, tickers)
 
-print("ORDERS \n {}".format(get_orders_info()))
-print("HOLDINGS \n {}".format(get_holdings_info()))
-print("POSITIONS \n {}".format(get_positions_info()))
+# print("ORDERS \n {}".format(get_orders_info()))
+# print("HOLDINGS \n {}".format(get_holdings_info()))
+# print("POSITIONS \n {}".format(get_positions_info()))
 
-mahabank_data  = nsepy.get_history(symbol="MAHABANK", start=dt.datetime.now() - dt.timedelta(365), end=dt.datetime.today())
-mahabank = mahabank_data[["Date", "Symbol","Prev Close", "Open", "High", "Low", "Close", "Volume"]]
+#mahabank_data = nsepy.get_history(symbol="MAHABANK", start=dt.datetime.now() - dt.timedelta(365), end=dt.datetime.today())
+#mahabank = mahabank_data[["Date", "Symbol", "Prev Close", "Open", "High", "Low", "Close", "Volume"]]
 
+"""
+while start_time < dt.datetime.now() < end_time:
+    time.sleep(5)
+    print(kite.ltp(["NSE:GMRINFRA"])[0][1])
 
+# place_market_order("IDEA", "buy", 1)
+"""
 
-# while start_time < dt.datetime.now() < end_time:
-#    print("Trading time-zone active")
-# print(kite.ltp(["NSE:PNB", "NSE:MAHABANK"]))
+close_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=29, second=00)
 
-
-#place_market_order("IDEA", "buy", 1)
+while True:
+    if close_time <= dt.datetime.now():
+        place_cnc_order("MAHABANK", "buy", 50)
+        print("Order placed")
+        break
+    else:
+        print("waiting for 3:29")
+        time.sleep(1)

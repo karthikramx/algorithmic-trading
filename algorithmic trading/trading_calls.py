@@ -67,7 +67,7 @@ def fetchOHLCExtended(ticker,inception_date, interval):
     return data
 
 
-def place_market_order(symbol, buy_sell, quantity):
+def place_order(symbol, buy_sell, quantity):
     # Place an intraday market order on NSE
     if buy_sell == "buy":
         t_type = kite.TRANSACTION_TYPE_BUY
@@ -77,7 +77,7 @@ def place_market_order(symbol, buy_sell, quantity):
                      exchange=kite.EXCHANGE_NSE,
                      transaction_type=t_type,
                      quantity=quantity,
-                     order_type=kite.ORDER_TYPE_MARKET,
+                     order_type=kite.ORDER_TYPE_LIMIT,
                      product=kite.PRODUCT_MIS,
                      variety=kite.VARIETY_REGULAR)
 
