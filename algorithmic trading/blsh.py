@@ -26,11 +26,13 @@ class tradx_driver:
 
     def get_holdings_info(self):
         data = kite.holdings()
-        try:
-            holds = pd.DataFrame(data[0], index=[0])
-        except:
-            holds = pd.DataFrame(data[0])
-        holds = holds[["tradingsymbol", "product", "quantity", "average_price", "last_price", "pnl"]]
+        holds = pd.DataFrame()
+        for d in data:
+            df = pd.DataFrame.from_records([d])
+            holds = holds.append(df)
+        holds.reset_index(inplace=True)
+        holds.drop('index', axis=1, inplace=True)
+        holds = holds[["tradingsymbol", "product", "t1_quantity", "average_price", "last_price", "pnl"]]
         return holds
 
     def get_positions_info(self):
@@ -75,8 +77,18 @@ class tradx_driver:
                          variety=kite.VARIETY_REGULAR,
                          price=price)
 
+    def print_strategyx1_status(self):
+        sys.stdout.write('\r' + "First 30 min holding price checks.")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "First 30 min holding price checks..")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "First 30 min holding price checks...")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "First 30 min holding price checks....")
+        time.sleep(0.25)
 
-tradable_instruments = ["PNB", "UNIONBANK"]
+
+tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB"]
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
 access_token = open(access_token_path, "r").read()
@@ -91,43 +103,54 @@ year = dt.datetime.now().year
 month = dt.datetime.now().month
 day = dt.datetime.now().day
 
-start_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=15, second=00)
+start_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=15, second=30)
 end_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=30, second=00)
 buy_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=29, second=00)
-sell_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=40, second=00)
+sell_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=45, second=00)
 
 buy_pending = True
+
+
+# Authorize CDSL TO SELL SHARES
 
 print("\nStart time: {} | end time:{}\n".format(start_time, end_time))
 holdings = tx.get_holdings_info()
 to_sell = holdings["tradingsymbol"].tolist()
-to_buy = np.setdiff1d(tradable_instruments, to_sell)
+to_buy = list(np.setdiff1d(tradable_instruments, to_sell))
 sold = []
-
+no_profit = []
 print("\nHOLDINDS\n{}\n".format(holdings))
+
 
 while start_time < dt.datetime.now() < end_time:
 
-    time.sleep(1)
-
     # SELL
     while dt.datetime.now() < sell_time and len(to_sell) > 0:
+        tx.print_strategyx1_status()
+        holdings = tx.get_holdings_info()
+
         for inst in to_sell:
-            if holdings[holdings["tradingsymbol"] == inst]["pnl"][0] > 0:
-                quantity = holdings[holdings["tradingsymbol"] == inst]["quantity"][0]
-                tx.place_cnc_order(inst, "sell", quantity)
-                sold.append(inst)
-                print("SOLD {} with pnl:{}".format(inst, holdings[holdings["tradingsymbol"] == inst]["pnl"][0]))
-        to_sell = np.setdiff1d(to_sell, sold)
+            pnl = holdings[holdings["tradingsymbol"] == inst]["pnl"].values[0]
+            if pnl > 0:
+                quantity = holdings[holdings["tradingsymbol"] == inst]["t1_quantity"].values[0]
+                if quantity > 0:
+                    tx.place_cnc_order(inst, "sell", quantity)
+                    sold.append(inst)
+                    print("SOLD {} | quantity:{} | with pnl:{}".format(inst, quantity, pnl))
+            else:
+                no_profit.append(inst)
+
+        to_sell = list(np.setdiff1d(to_sell, sold))
         if not to_sell:
+            print("Nothing to sell")
             break
 
     # BUY
     if buy_time <= dt.datetime.now() and buy_pending:
-        holdings = tx.get_holdings_info()
         for inst in to_buy:
             tx.place_cnc_order(inst, "buy", 1)
-            print("\n Order placed - {}")
+            print("Order placed - {}".format(inst))
             buy_pending = False
 
+    time.sleep(1)
     sys.stdout.write('\r' + str(dt.datetime.now()))
