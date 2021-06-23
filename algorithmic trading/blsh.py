@@ -12,10 +12,11 @@ blsh - buy low sell high
 """
 
 """
-1. lauches at 9:00 *
-2. Authorize CDSL *
-3. sell previous days stock if price per share has increased > 0.05
-4. At 15:29 
+        0. Schedule login.py at 9
+        1. Auto launch at 9:15 *
+        2. Automate Authorizing CDSL at 9:15
+(done)  3. sell previous days stock if price per share has increased > 0.05
+(done)  4. buy stock after 3:29 
 """
 
 
@@ -32,7 +33,6 @@ class tradx_driver:
             holds = holds.append(df)
         holds.reset_index(inplace=True)
         holds.drop('index', axis=1, inplace=True)
-        holds = holds[["tradingsymbol", "product", "t1_quantity", "average_price", "last_price", "pnl"]]
         return holds
 
     def get_positions_info(self):
@@ -87,8 +87,13 @@ class tradx_driver:
         sys.stdout.write('\r' + "First 30 min holding price checks....")
         time.sleep(0.25)
 
+    def idle(self):
+        time.sleep(1)
+        sys.stdout.write('\r' + str(dt.datetime.now()))
 
-tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB"]
+
+tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB", "SUZLON", "ONGC",
+                        "BANKBARODA", "MMTC"]
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
 access_token = open(access_token_path, "r").read()
@@ -110,7 +115,6 @@ sell_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=45, seco
 
 buy_pending = True
 
-
 # Authorize CDSL TO SELL SHARES
 
 print("\nStart time: {} | end time:{}\n".format(start_time, end_time))
@@ -121,13 +125,13 @@ sold = []
 no_profit = []
 print("\nHOLDINDS\n{}\n".format(holdings))
 
-
 while start_time < dt.datetime.now() < end_time:
 
     # SELL
     while dt.datetime.now() < sell_time and len(to_sell) > 0:
         tx.print_strategyx1_status()
         holdings = tx.get_holdings_info()
+        time.sleep(1)
 
         for inst in to_sell:
             pnl = holdings[holdings["tradingsymbol"] == inst]["pnl"].values[0]
@@ -148,9 +152,8 @@ while start_time < dt.datetime.now() < end_time:
     # BUY
     if buy_time <= dt.datetime.now() and buy_pending:
         for inst in to_buy:
-            tx.place_cnc_order(inst, "buy", 1)
+            tx.place_cnc_order(inst, "buy", 5)
             print("Order placed - {}".format(inst))
             buy_pending = False
 
-    time.sleep(1)
-    sys.stdout.write('\r' + str(dt.datetime.now()))
+    tx.idle()
