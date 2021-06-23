@@ -12,9 +12,10 @@ blsh - buy low sell high
 """
 
 """
-        0. Schedule login.py at 9
-        1. Auto launch at 9:15 *
-        2. Automate Authorizing CDSL at 9:15
+        0. Schedule login.py at 9                                           - higher level task
+        1. Execute only on trading days                                     - higher level task
+        1. Auto launch at 9:15 *                                            - higher level task
+        2. Automate Authorizing CDSL at 9:15                                - higher level task
 (done)  3. sell previous days stock if price per share has increased > 0.05
 (done)  4. buy stock after 3:29 
 """
