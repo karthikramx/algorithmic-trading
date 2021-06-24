@@ -9,3 +9,4 @@ bs4~=0.0.1
 beautifulsoup4~=4.9.3
 kiteconnect~=3.9.2
 numpy~=1.19.2
+nsepy~=0.8

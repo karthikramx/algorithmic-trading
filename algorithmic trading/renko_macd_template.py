@@ -75,9 +75,9 @@ def MACD(DF,a,b,c):
 def macd_xover_refresh(macd,ticker):
     global macd_xover
     if macd["MACD"][-1]>macd["Signal"][-1]:
-        macd_xover[ticker]="bullish"
+        macd_xover[ticker] = "bullish"
     elif macd["MACD"][-1]<macd["Signal"][-1]:
-        macd_xover[ticker]="bearish"
+        macd_xover[ticker] = "bearish"
         
 def renkoOperation(ticks):
     for tick in ticks:

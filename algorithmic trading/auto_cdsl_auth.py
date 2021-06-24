@@ -3,10 +3,15 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 import datetime as dt
-from paths import *
 from config import *
 import time
-
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+import pickle
+import os.path
+from paths import *
+import sys
 
 # automate browser to login into kite
 # navigate to holdings
@@ -25,6 +30,10 @@ class auto_authorize_cdsl:
     def __init__(self):
         handles = None
         print("Auto CDSL authorization initialized at: {}".format(dt.datetime.now()))
+        tpin = open(cdsl_tpin_path, 'r').read().split()[0]
+        self.auto_auth(tpin)
+
+    def auto_auth(self, tpin):
         key_secret = open(auth_details_path, 'r').read().split()
         service = webdriver.chrome.service.Service('./chromedriver')
         service.start()
@@ -32,13 +41,12 @@ class auto_authorize_cdsl:
         if HEADLESS_MODE:
             options.add_argument('--headless')
         options = options.to_capabilities()
-        print("\t\tLaunching Chrome Driver")
+        print("Launching Chrome Driver")
         driver = webdriver.Remote(service.service_url, options)
         driver.set_window_position(BROWSER_X_POS, BROWSER_Y_POS)
         driver.set_window_size(BROWSER_X_SIZE, BROWSER_Y_SIZE)
         driver.get("https://kite.zerodha.com/")
         driver.implicitly_wait(10)
-
 
         username = driver.find_element_by_id("userid")
         password = driver.find_element_by_id("password")
@@ -53,19 +61,94 @@ class auto_authorize_cdsl:
         driver.find_element_by_class_name("button.button-blue").click()
 
         time.sleep(0.5)
+
+        # Working on the POP window from CDSL
         pop_up = driver.window_handles[1]
         driver.switch_to.window(pop_up)
         driver.find_element_by_class_name("button.button-blue").click()
         time.sleep(0.5)
         actions = ActionChains(driver)
-        actions.send_keys('******')
+        actions.send_keys(tpin)
         actions.perform()
         all_elements = driver.find_elements_by_tag_name("button")
         actions.click(all_elements[0])
         actions.perform()
-        print("x")
-        time.sleep(5)
+
+        # Waiting for GMAIL API to receive OTP
+        OTP = self.get_OTP()
+        print("\nReceived OTP:{}".format(OTP))
+
+        # entering OTP for CDSL authorization
+        pop_up = driver.window_handles[1]
+        driver.switch_to.window(pop_up)
+        actions = ActionChains(driver)
+
+        actions.send_keys(OTP)
+        actions.perform()
+        all_elements = driver.find_elements_by_tag_name("button")
+        actions.click(all_elements[0])
+        actions.perform()
+        time.sleep(2)
         driver.quit()
+        print("CDSL AUTO AUTHORIZATION COMPLETE")
+
+    def get_OTP(self):
+        # Variable creds will store the user access token.
+        # If no valid token found, we will create one.
+        creds = None
+        OTP = None
+        SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+        # The file token.pickle contains the user access token.
+        # Check if it exists
+        if os.path.exists(gmail_token_path):
+            # Read the token from the file and store it in the variable creds
+            with open(gmail_token_path, 'rb') as token:
+                creds = pickle.load(token)
+
+        # If credentials are not available or are invalid, ask the user to log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(gmail_credentials_path, SCOPES)
+                creds = flow.run_local_server(port=0)
+
+            # Save the access token in token.pickle file for the next run
+            with open(gmail_token_path, 'wb') as token:
+                pickle.dump(creds, token)
+
+        # Connect to the Gmail API
+        service = build('gmail', 'v1', credentials=creds)
+
+        messages = None
+        # We can also pass maxResults to get any number of emails. Like this:
+        while messages is None:
+            result = service.users().messages().list(maxResults=5, userId='me', q="edis@cdslindia.co.in").execute()
+            messages = result.get('messages')
+            time.sleep(1)
+            self.print_OTP_wait_msg()
+
+        # iterate through all the messages
+        for msg in messages:
+            # Get the message from its id
+            txt = service.users().messages().get(userId='me', id=msg['id']).execute()
+            ad = txt.get('snippet')
+            OTP = [x for x in ad.split(' ') if len(x) == 6 and x.isdigit()][0]
+            print(OTP)
+
+        return OTP
+
+    def print_OTP_wait_msg(self):
+        sys.stdout.write('\r' + "Waiting for OTP.")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "Waiting for OTP..")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "Waiting for OTP...")
+        time.sleep(0.25)
+        sys.stdout.write('\r' + "Waiting for OTP....")
+        time.sleep(0.25)
 
 
-aac = auto_authorize_cdsl()
+
+
