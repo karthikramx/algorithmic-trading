@@ -94,7 +94,7 @@ class tradx_driver:
 
 
 tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB", "SUZLON", "ONGC",
-                        "BANKBARODA", "MMTC"]
+                        "BANKBARODA", "MMTC", "MAHABANK"]
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
 access_token = open(access_token_path, "r").read()
@@ -125,14 +125,18 @@ to_buy = list(np.setdiff1d(tradable_instruments, to_sell))
 sold = []
 no_profit = []
 print("\nHOLDINDS\n{}\n".format(holdings))
+print("\nEOD BUY: {}\n".format(to_buy))
 
 while start_time < dt.datetime.now() < end_time:
 
     # SELL
-    while dt.datetime.now() < sell_time and len(to_sell) > 0:
+    while dt.datetime.now() <= sell_time and len(to_sell) > 0:
         tx.print_strategyx1_status()
         holdings = tx.get_holdings_info()
         time.sleep(1)
+        if dt.datetime.now() == sell_time:
+            print("\nEnd of 30 minute check. Exiting at 9:45\n")
+            break
 
         for inst in to_sell:
             pnl = holdings[holdings["tradingsymbol"] == inst]["pnl"].values[0]
@@ -141,7 +145,7 @@ while start_time < dt.datetime.now() < end_time:
                 if quantity > 0:
                     tx.place_cnc_order(inst, "sell", quantity)
                     sold.append(inst)
-                    print("SOLD {} | quantity:{} | with pnl:{}".format(inst, quantity, pnl))
+                    print("\nSOLD {} | quantity:{} | with pnl:{}".format(inst, quantity, round(pnl, 2)))
             else:
                 no_profit.append(inst)
 
@@ -150,11 +154,13 @@ while start_time < dt.datetime.now() < end_time:
             print("Nothing to sell")
             break
 
+
     # BUY
     if buy_time <= dt.datetime.now() and buy_pending:
         for inst in to_buy:
             tx.place_cnc_order(inst, "buy", 5)
             print("Order placed - {}".format(inst))
-            buy_pending = False
+            time.sleep(0.5)
+        buy_pending = False
 
     tx.idle()
