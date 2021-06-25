@@ -10,3 +10,5 @@ beautifulsoup4~=4.9.3
 kiteconnect~=3.9.2
 numpy~=1.19.2
 nsepy~=0.8
+future~=0.18.2
+pyttsx3~=2.90

@@ -15,7 +15,6 @@ import datetime as dt
 
 
 def autologin():
-
     key_secret = open(auth_details_path, 'r').read().split()
     kite = KiteConnect(api_key=key_secret[0])
     print("Kite Object created")
@@ -25,9 +24,10 @@ def autologin():
     options = webdriver.ChromeOptions()
     if HEADLESS_MODE:
         options.add_argument('--headless')
-    options = options.to_capabilities()
     print("Launching Chrome Driver")
-    driver = webdriver.Remote(service.service_url, options)
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    driver = webdriver.Remote(service.service_url, options=options)
+
     driver.set_window_position(BROWSER_X_POS, BROWSER_Y_POS)
     driver.set_window_size(BROWSER_X_SIZE, BROWSER_Y_SIZE)
     driver.get(kite.login_url())
@@ -45,10 +45,16 @@ def autologin():
     time.sleep(4)
     print("CURRENT URL: {}".format(driver.current_url))
 
-    request_token = driver.current_url.split('=')[1].split('&action')[0]  # fails the string operation sometimes
-    print("REQUEST TOKEN: {}".format(request_token))
+    url_split = driver.current_url.split('=')
+    request_token = max(url_split, key=len)
+    request_token = request_token.split('&action')[0]
+    print("REQUEST TOKEN: {}, len:{}".format(request_token, len(request_token)))
 
     driver.quit()
+
+    if request_token == "login&status":
+        print("FAILED TO ACCESS REQUEST TOKEN... TRYING AGAIN")
+        autologin()
 
     with open(request_token_path, 'w') as the_file:
         the_file.write(request_token)
@@ -66,7 +72,4 @@ def generate_access_token():
         print("ACCESS  TOKEN: {} SAVED".format(data["access_token"]))
 
 
-
-
-# print(kite.holdings())
-
+#   https://127.0.0.1/?request_token=ri2iebQlMq9kMp2pgqe4C9fdyLk9AyDF&action=login&status=success

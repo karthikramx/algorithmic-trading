@@ -2,6 +2,12 @@ import numpy as np
 from auto_cdsl_auth import *
 from auto_login import *
 
+# handle all voice related tasks in a saperate folder
+import pyttsx3
+engine = pyttsx3.init()
+
+
+
 """
 blsh - buy low sell high
 """
@@ -102,6 +108,8 @@ end_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=30, seco
 buy_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=29, second=00)
 sell_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=45, second=00)
 
+engine.say("TRADEX INITIALIZED")
+engine.runAndWait()
 
 # AUTO LOGIN KITE AND GENERATE ACCESS TOKEN
 autologin()
@@ -111,8 +119,14 @@ key_secret = open(auth_details_path, 'r').read().split()
 kite = KiteConnect(api_key=key_secret[0])
 kite.set_access_token(access_token)
 
+engine.say("AUTO LOGIN COMPLETE AND ACCESS TOKEN UPDATED")
+engine.runAndWait()
+
 # AUTHORIZE CDSL TO SELL SHARES
 aac = auto_authorize_cdsl()
+
+engine.say("C D S L AUTO AUTHORIZATION COMPLETE")
+engine.runAndWait()
 
 
 tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB", "SUZLON", "ONGC",
@@ -133,6 +147,8 @@ no_profit = []
 print("\nHOLDINDS\n{}\n".format(holdings))
 print("\nEOD BUY: {}\n".format(to_buy))
 
+engine.say("GOING LIVE")
+engine.runAndWait()
 
 while start_time < dt.datetime.now() < end_time:
 
@@ -164,7 +180,7 @@ while start_time < dt.datetime.now() < end_time:
     # BUY
     if buy_time <= dt.datetime.now() and buy_pending:
         for inst in to_buy:
-            tx.place_cnc_order(inst, "buy", 5)
+            tx.place_cnc_order(inst, "buy", 7)
             print("\nOrder placed - {}".format(inst))
             time.sleep(0.5)
         buy_pending = False

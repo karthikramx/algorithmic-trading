@@ -40,9 +40,9 @@ class auto_authorize_cdsl:
         options = webdriver.ChromeOptions()
         if HEADLESS_MODE:
             options.add_argument('--headless')
-        options = options.to_capabilities()
         print("Launching Chrome Driver")
-        driver = webdriver.Remote(service.service_url, options)
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        driver = webdriver.Remote(service.service_url, options=options)
         driver.set_window_position(BROWSER_X_POS, BROWSER_Y_POS)
         driver.set_window_size(BROWSER_X_SIZE, BROWSER_Y_SIZE)
         driver.get("https://kite.zerodha.com/")
