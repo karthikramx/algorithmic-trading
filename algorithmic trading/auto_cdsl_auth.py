@@ -1,5 +1,3 @@
-import time
-
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 import datetime as dt
@@ -13,18 +11,19 @@ import os.path
 from paths import *
 import sys
 
-
-# automate browser to login into kite
-# navigate to holdings
-# click authorization
-# Click on continue on pop-up
-# Click on continue-to-CDSL on pop-up
-# Submit tpin
-# check for otp on email from edis@cdslindia.co.in
-# extract 6 digit otp | https://www.geeksforgeeks.org/python-fetch-your-gmail-emails-from-a-particular-user/
-# enter otp to authorize selling shares
-# confirm authorization
-# exit browser
+"""
++ automate browser to login into kite
++ navigate to holdings
++ click authorization
++ Click on continue on pop-up
++ Click on continue-to-CDSL on pop-up
++ Submit tpin
++ check for otp on email from edis@cdslindia.co.in
++ extract 6 digit otp | https://www.geeksforgeeks.org/python-fetch-your-gmail-emails-from-a-particular-user/
++ enter otp to authorize selling shares
++ confirm authorization
++ exit browser
+"""
 
 
 class auto_authorize_cdsl:
@@ -37,7 +36,6 @@ class auto_authorize_cdsl:
         self.delete_edis_email()
         self.auto_auth(tpin)
         self.delete_edis_email()
-
 
     def auto_auth(self, tpin):
         key_secret = open(auth_details_path, 'r').read().split()
@@ -164,7 +162,7 @@ class auto_authorize_cdsl:
             # delete the message from its id
             self.service.users().messages().delete(userId="me", id=msg['id']).execute()
 
-        print("DELETED PREVIOUS EMAIL(S) from: edis@cdslindia.co.in with ID:")
+        print("DELETED PREVIOUS EMAIL(S) from: edis@cdslindia.co.in:")
 
     def print_OTP_wait_msg(self):
         sys.stdout.write('\r' + "Waiting for OTP.")
@@ -175,5 +173,3 @@ class auto_authorize_cdsl:
         time.sleep(0.25)
         sys.stdout.write('\r' + "Waiting for OTP....")
         time.sleep(0.25)
-
-

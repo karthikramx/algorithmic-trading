@@ -8,7 +8,7 @@ from paths import *
 
 class tradex_driver:
 
-    def __init__(self, kite):
+    def __init__(self):
         print("INITIALIZED TRADEX DRIVER\n")
         access_token = open(access_token_path, "r").read()
         key_secret = open(auth_details_path, 'r').read().split()

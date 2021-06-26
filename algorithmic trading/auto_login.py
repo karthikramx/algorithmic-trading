@@ -8,10 +8,8 @@ Trading Robot - Zerodha Kite Connect Platform
 from kiteconnect import KiteConnect
 from selenium import webdriver
 from config import *
-import time
 from paths import *
-import pandas as pd
-import datetime as dt
+import time
 
 
 def autologin():
@@ -70,6 +68,3 @@ def generate_access_token():
     with open(access_token_path, 'w') as file:
         file.write(data["access_token"])
         print("ACCESS  TOKEN: {} SAVED".format(data["access_token"]))
-
-
-#   https://127.0.0.1/?request_token=ri2iebQlMq9kMp2pgqe4C9fdyLk9AyDF&action=login&status=success

@@ -27,15 +27,14 @@ day = dt.datetime.now().day
 holiday_list = [dt.datetime.strptime(date, '%d-%b-%Y').date() for date in trading_holidays]
 trading_date = dt.datetime.today()
 
-if trading_date.date() in holiday_list or trading_date.weekday() in [5, 6]:
-    print("HOLIDAY :/")
-    exit()
+
 
 # INIT TRADEX ACTION TIME
 start_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=15, second=30)
 end_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=30, second=00)
 buy_time = dt.datetime(year=year, month=month, day=day, hour=15, minute=29, second=00)
 sell_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=45, second=00)
+
 
 engine.say("TRADEX INITIALIZED")
 engine.runAndWait()
@@ -58,6 +57,7 @@ engine.runAndWait()
 
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
+
 tx = tradex_driver()
 buy_pending = True
 
@@ -72,6 +72,10 @@ print("\nEOD BUY: {}\n".format(to_buy))
 
 engine.say("GOING LIVE")
 engine.runAndWait()
+
+if trading_date.date() in holiday_list or trading_date.weekday() in [5, 6]:
+    print("HOLIDAY :/")
+    exit()
 
 
 while start_time < dt.datetime.now() < end_time:
