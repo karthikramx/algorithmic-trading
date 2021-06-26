@@ -1,99 +1,22 @@
 import numpy as np
+from tradex_driver import tradex_driver
 from auto_cdsl_auth import *
 from auto_login import *
-
-# handle all voice related tasks in a saperate folder
 import pyttsx3
+
 engine = pyttsx3.init()
-
-
 
 """
 blsh - buy low sell high
 """
 
 """
-        0. Schedule login.py at 9                                           - higher level task
-        1. Execute only on trading days                                     - higher level task
-        1. Auto launch at 9:15 *                                            - higher level task
-(done)  2. Automate Authorizing CDSL at 9:15                                - higher level task
-(done)  3. sell previous days stock if price per share has increased > 0.05
-(done)  4. buy stock after 3:29 
+(done)  1. Execute only on trading days                                     - higher level task
+        2. Auto launch at 9:15 *                                            - higher level task
+(done)  3. Automate Authorizing CDSL at 9:15                                - higher level task
+(done)  4. sell previous days stock if price per share has increased > 0.05
+(done)  5. buy stock after 3:29 
 """
-
-
-class tradx_driver:
-
-    def __init__(self):
-        print("Initialized TradeX driver\n")
-
-    def get_holdings_info(self):
-        data = kite.holdings()
-        holds = pd.DataFrame()
-        for d in data:
-            df = pd.DataFrame.from_records([d])
-            holds = holds.append(df)
-        holds.reset_index(inplace=True)
-        holds.drop('index', axis=1, inplace=True)
-        return holds
-
-    def get_positions_info(self):
-        data = kite.positions()
-        net = pd.DataFrame(data['net'])
-        day = pd.DataFrame(data['day'])
-        positions = day[["tradingsymbol", "product", "quantity", "average_price", "last_price", "pnl"]]
-        return positions
-
-    def get_orders_info(self):
-        data = kite.orders()
-        order = pd.DataFrame(data)
-        order = order[["tradingsymbol", "order_type", "status", "transaction_type", "product", "quantity", "price"]]
-        return order
-
-    def place_cnc_order(self, symbol, buy_sell, quantity):
-        # Place an intraday market order on NSE
-        t_type = None
-        if buy_sell == "buy":
-            t_type = kite.TRANSACTION_TYPE_BUY
-        elif buy_sell == "sell":
-            t_type = kite.TRANSACTION_TYPE_SELL
-        kite.place_order(tradingsymbol=symbol,
-                         exchange=kite.EXCHANGE_NSE,
-                         transaction_type=t_type,
-                         quantity=quantity,
-                         order_type=kite.ORDER_TYPE_MARKET,
-                         product=kite.PRODUCT_CNC,
-                         variety=kite.VARIETY_REGULAR)
-
-    def place_limit_order(self, symbol, buy_sell, quantity, price):
-        # Place an intraday market order on NSE
-        if buy_sell == "buy":
-            t_type = kite.TRANSACTION_TYPE_BUY
-        elif buy_sell == "sell":
-            t_type = kite.TRANSACTION_TYPE_SELL
-        kite.place_order(tradingsymbol=symbol,
-                         exchange=kite.EXCHANGE_NSE,
-                         transaction_type=t_type,
-                         quantity=quantity,
-                         order_type=kite.ORDER_TYPE_LIMIT,
-                         product=kite.PRODUCT_CNC,
-                         variety=kite.VARIETY_REGULAR,
-                         price=price)
-
-    def print_strategyx1_status(self):
-        sys.stdout.write('\r' + "First 30 min holding price checks.")
-        time.sleep(0.25)
-        sys.stdout.write('\r' + "First 30 min holding price checks..")
-        time.sleep(0.25)
-        sys.stdout.write('\r' + "First 30 min holding price checks...")
-        time.sleep(0.25)
-        sys.stdout.write('\r' + "First 30 min holding price checks....")
-        time.sleep(0.25)
-
-    def idle(self):
-        time.sleep(1)
-        sys.stdout.write('\r' + str(dt.datetime.now()))
-
 
 # INIT TIME
 year = dt.datetime.now().year
@@ -101,6 +24,12 @@ month = dt.datetime.now().month
 day = dt.datetime.now().day
 
 # CHECK IF TRADIND DAY IS TRUE
+holiday_list = [dt.datetime.strptime(date, '%d-%b-%Y').date() for date in trading_holidays]
+trading_date = dt.datetime.today()
+
+if trading_date.date() in holiday_list or trading_date.weekday() in [5, 6]:
+    print("HOLIDAY :/")
+    exit()
 
 # INIT TRADEX ACTION TIME
 start_time = dt.datetime(year=year, month=month, day=day, hour=9, minute=15, second=30)
@@ -114,29 +43,23 @@ engine.runAndWait()
 # AUTO LOGIN KITE AND GENERATE ACCESS TOKEN
 autologin()
 generate_access_token()
-access_token = open(access_token_path, "r").read()
-key_secret = open(auth_details_path, 'r').read().split()
-kite = KiteConnect(api_key=key_secret[0])
-kite.set_access_token(access_token)
 
 engine.say("AUTO LOGIN COMPLETE AND ACCESS TOKEN UPDATED")
 engine.runAndWait()
 
 # AUTHORIZE CDSL TO SELL SHARES
+engine.say("C D S L AUTO AUTHORIZATION INITIALIZED")
+engine.runAndWait()
+
 aac = auto_authorize_cdsl()
 
 engine.say("C D S L AUTO AUTHORIZATION COMPLETE")
 engine.runAndWait()
 
-
-tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB", "SUZLON", "ONGC",
-                        "BANKBARODA", "MMTC", "MAHABANK", "ZEELEARN"]
-
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
-tx = tradx_driver()
+tx = tradex_driver()
 buy_pending = True
-
 
 print("\nStart time: {} | end time:{}\n".format(start_time, end_time))
 holdings = tx.get_holdings_info()
@@ -149,6 +72,7 @@ print("\nEOD BUY: {}\n".format(to_buy))
 
 engine.say("GOING LIVE")
 engine.runAndWait()
+
 
 while start_time < dt.datetime.now() < end_time:
 
@@ -180,9 +104,15 @@ while start_time < dt.datetime.now() < end_time:
     # BUY
     if buy_time <= dt.datetime.now() and buy_pending:
         for inst in to_buy:
-            tx.place_cnc_order(inst, "buy", 7)
+            tx.place_cnc_order(inst, "buy", 10)
             print("\nOrder placed - {}".format(inst))
             time.sleep(0.5)
+
+        engine.say("BUY COMPLETE")
+        engine.runAndWait()
         buy_pending = False
 
     tx.idle()
+
+engine.say("TRADEX SHUTTING DOWN")
+engine.runAndWait()

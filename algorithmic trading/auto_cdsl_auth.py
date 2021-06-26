@@ -13,6 +13,7 @@ import os.path
 from paths import *
 import sys
 
+
 # automate browser to login into kite
 # navigate to holdings
 # click authorization
@@ -31,7 +32,12 @@ class auto_authorize_cdsl:
         handles = None
         print("Auto CDSL authorization initialized at: {}".format(dt.datetime.now()))
         tpin = open(cdsl_tpin_path, 'r').read().split()[0]
+        self.service = None
+        self.auth_gmail()
+        self.delete_edis_email()
         self.auto_auth(tpin)
+        self.delete_edis_email()
+
 
     def auto_auth(self, tpin):
         key_secret = open(auth_details_path, 'r').read().split()
@@ -92,12 +98,12 @@ class auto_authorize_cdsl:
         driver.quit()
         print("CDSL AUTO AUTHORIZATION COMPLETE")
 
-    def get_OTP(self):
+    def auth_gmail(self):
         # Variable creds will store the user access token.
         # If no valid token found, we will create one.
         creds = None
         OTP = None
-        SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+        SCOPES = ['https://mail.google.com/']
 
         # The file token.pickle contains the user access token.
         # Check if it exists
@@ -119,12 +125,13 @@ class auto_authorize_cdsl:
                 pickle.dump(creds, token)
 
         # Connect to the Gmail API
-        service = build('gmail', 'v1', credentials=creds)
+        self.service = build('gmail', 'v1', credentials=creds)
 
+    def get_OTP(self):
         messages = None
         # We can also pass maxResults to get any number of emails. Like this:
         while messages is None:
-            result = service.users().messages().list(maxResults=5, userId='me', q="edis@cdslindia.co.in").execute()
+            result = self.service.users().messages().list(maxResults=5, userId='me', q="edis@cdslindia.co.in").execute()
             messages = result.get('messages')
             time.sleep(1)
             self.print_OTP_wait_msg()
@@ -132,12 +139,32 @@ class auto_authorize_cdsl:
         # iterate through all the messages
         for msg in messages:
             # Get the message from its id
-            txt = service.users().messages().get(userId='me', id=msg['id']).execute()
+            txt = self.service.users().messages().get(userId='me', id=msg['id']).execute()
             ad = txt.get('snippet')
             OTP = [x for x in ad.split(' ') if len(x) == 6 and x.isdigit()][0]
             print(OTP)
 
         return OTP
+
+    def delete_edis_email(self):
+
+        messages = None
+        result = None
+
+        result = self.service.users().messages().list(maxResults=5, userId='me', q="edis@cdslindia.co.in").execute()
+        messages = result.get('messages')
+
+        if messages is None:
+            print("NO EMAILS FROM edis@cdslindia.co.in FOUND")
+            return
+
+        print("\nResult:{}".format(result))
+
+        for msg in messages:
+            # delete the message from its id
+            self.service.users().messages().delete(userId="me", id=msg['id']).execute()
+
+        print("DELETED PREVIOUS EMAIL(S) from: edis@cdslindia.co.in with ID:")
 
     def print_OTP_wait_msg(self):
         sys.stdout.write('\r' + "Waiting for OTP.")
@@ -148,7 +175,5 @@ class auto_authorize_cdsl:
         time.sleep(0.25)
         sys.stdout.write('\r' + "Waiting for OTP....")
         time.sleep(0.25)
-
-
 
 
