@@ -17,6 +17,24 @@ class tradex_driver:
         self.kite.set_access_token(access_token)
         print("KITE ACCESS TOKEN SET")
 
+        self.margin_update = True
+
+    def get_equity_margins(self):
+        return round(self.kite.margins(self.kite.MARGIN_EQUITY).get('net'), 2)
+
+    def update_daily_margin(self, to_sell):
+        if not to_sell and self.margin_update:
+            margin_available = self.get_equity_margins()
+            df = pd.DataFrame({'date': str(dt.datetime.now().date()),
+                               'margin': str(margin_available),
+                               'gains': '0'},
+                              index=[1])
+            margins = pd.read_csv(margins_details_path, index_col=False)
+            x = pd.concat([margins, df])
+            x.reset_index(inplace=True, drop='index')
+            x.to_csv(margins_details_path)
+            self.margin_update = False
+
     def get_holdings_info(self):
         data = self.kite.holdings()
         holds = pd.DataFrame()
@@ -52,6 +70,22 @@ class tradex_driver:
                               transaction_type=t_type,
                               quantity=quantity,
                               order_type=self.kite.ORDER_TYPE_MARKET,
+                              product=self.kite.PRODUCT_CNC,
+                              variety=self.kite.VARIETY_REGULAR)
+
+    def place_cnc_stoploss_order(self, symbol, buy_sell, quantity, trigger_price):
+        # Place an intraday market order on NSE with stoploss
+        t_type = None
+        if buy_sell == "buy":
+            t_type = self.kite.TRANSACTION_TYPE_BUY
+        elif buy_sell == "sell":
+            t_type = self.kite.TRANSACTION_TYPE_SELL
+        self.kite.place_order(tradingsymbol=symbol,
+                              exchange=self.kite.EXCHANGE_NSE,
+                              transaction_type=t_type,
+                              quantity=quantity,
+                              order_type=self.kite.ORDER_TYPE_SLM,
+                              trigger_price=trigger_price,
                               product=self.kite.PRODUCT_CNC,
                               variety=self.kite.VARIETY_REGULAR)
 

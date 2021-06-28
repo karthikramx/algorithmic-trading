@@ -26,4 +26,6 @@ trading_holidays = ['26-Jan-2021', '11-Mar-2021', '29-Mar-2021', '02-Apr-2021', 
 tradable_instruments = ["PNB", "UNIONBANK", "YESBANK", "IDEA", "GMRINFRA", "IDBI", "IDFCFIRSTB", "SUZLON", "ONGC",
                         "BANKBARODA", "MMTC", "MAHABANK", "ZEELEARN"]
 
+risk_factor = 0.30
+
 my_tickers = []
