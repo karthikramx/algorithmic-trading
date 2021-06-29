@@ -113,6 +113,8 @@ class tradex_driver:
         time.sleep(0.25)
         sys.stdout.write('\r' + "First 30 min holding price checks....")
         time.sleep(0.25)
+        sys.stdout.write('\r' + "First 30 min holding price checks.....")
+        time.sleep(0.25)
 
     def idle(self):
         time.sleep(1)

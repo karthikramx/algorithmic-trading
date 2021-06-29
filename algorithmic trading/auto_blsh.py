@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from tradex_driver import tradex_driver
 from auto_cdsl_auth import *
@@ -21,7 +23,7 @@ blsh - buy low sell high
 (done)  6. Invest half your Margins available
 (done)  7. divide capital available by number of tradable instruments and buy
 (done)* 8. Assign stop losses for each order
-
+()      9. Check for LTP and place a limit order during sell
 ()      9. Basic stoploss, with gain GTTs and stop loss limits
 
 """
@@ -88,19 +90,21 @@ while start_time < dt.datetime.now() < end_time:
     while dt.datetime.now() <= sell_time and len(to_sell) > 0:
         tx.print_strategyx1_status()
         holdings = tx.get_holdings_info()
-        time.sleep(1)
+
         if dt.datetime.now() == sell_time:
             print("\nEnd of 30 minute check. Exiting at 9:45\n")
             break
 
         for inst in to_sell:
-            pnl = holdings[holdings["tradingsymbol"] == inst]["pnl"].values[0]
-            if pnl > 0:
+            average_price = holdings[holdings["tradingsymbol"] == inst]["average_price"].values[0]
+            last_price = holdings[holdings["tradingsymbol"] == inst]["last_price"].values[0]
+            if last_price - average_price >= 0.10:
                 quantity = holdings[holdings["tradingsymbol"] == inst]["t1_quantity"].values[0]
                 if quantity > 0:
                     tx.place_cnc_order(inst, "sell", quantity)
+                    time.sleep(1)
                     sold.append(inst)
-                    print("\nSOLD {} | quantity:{} | with pnl:{}".format(inst, quantity, round(pnl, 2)))
+                    print("\nSOLD {} | quantity:{}".format(inst, quantity))
             else:
                 no_profit.append(inst)
 
@@ -137,3 +141,5 @@ while start_time < dt.datetime.now() < end_time:
 
 engine.say("TRADEX SHUTTING DOWN")
 engine.runAndWait()
+
+
