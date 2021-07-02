@@ -59,11 +59,14 @@ class auto_authorize_cdsl:
         driver.find_element_by_class_name("button-orange.wide").click()
         pin = driver.find_element_by_id("pin")
         pin.send_keys(key_secret[4])
+        time.sleep(0.1)
         driver.find_element_by_class_name("button-orange.wide").click()
+        time.sleep(0.1)
         driver.find_element_by_class_name("icon.icon-briefcase").click()
+        time.sleep(0.1)
         driver.find_element_by_class_name("icon.icon-lock").click()
+        time.sleep(0.1)
         driver.find_element_by_class_name("button.button-blue").click()
-
         time.sleep(0.5)
 
         # Working on the POP window from CDSL
