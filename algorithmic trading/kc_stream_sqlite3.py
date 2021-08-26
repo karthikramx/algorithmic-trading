@@ -62,13 +62,7 @@ def tokenLookup(instrument_df, symbol_list):
     return token_list
 
 
-tickers = ["ZEEL", "WIPRO", "VEDL", "ULTRACEMCO", "UPL", "TITAN", "TECHM", "TATASTEEL",
-           "TATAMOTORS", "TCS", "SUNPHARMA", "SBIN", "SHREECEM", "RELIANCE", "POWERGRID",
-           "ONGC", "NESTLEIND", "NTPC", "MARUTI", "M&M", "LT", "KOTAKBANK", "JSWSTEEL", "INFY",
-           "INDUSINDBK", "IOC", "ITC", "ICICIBANK", "HDFC", "HINDUNILVR", "HINDALCO",
-           "HEROMOTOCO", "HDFCBANK", "HCLTECH", "GRASIM", "GAIL", "EICHERMOT", "DRREDDY",
-           "COALINDIA", "CIPLA", "BRITANNIA", "BHARTIARTL", "BPCL", "BAJAJFINSV",
-           "BAJFINANCE", "BAJAJ-AUTO", "AXISBANK", "ASIANPAINT", "ADANIPORTS"]
+tickers = ["MMTC"]
 
 
 # create KiteTicker object

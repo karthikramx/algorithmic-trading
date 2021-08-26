@@ -140,6 +140,3 @@ class tradex_driver:
         time.sleep(1)
         sys.stdout.write('\r' + str(dt.datetime.now()))
 
-
-
-    # self.kite.ltp

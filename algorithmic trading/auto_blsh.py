@@ -30,12 +30,13 @@ blsh - buy low sell high
 (done)  5. buy stock after 3:29 
 (done)  6. Invest half your Margins available
 (done)  7. divide capital available by number of tradable instruments and buy
-(done)* 8. Assign stop losses for each order
-******* 9. Holdings is not updating frequently - need to stream values or get pnl values
+(done)  8. Holdings is not updating frequently - need to stream values or get pnl values
 ()      9. Check for LTP and place a limit order during sell
-()     10. Basic stoploss, with gain GTTs and stop loss limits
+()     10. Basic stoploss, with gain GTTs and stop loss limits - fucntions
 ()     11. Check frequency of calls
-()     12. Add logging 
+(done) 12. Add logging
+()     13. Implement actual charges and take positions with stop loss 
+()     14. Brokerage Calculator
 
 """
 
@@ -63,8 +64,9 @@ engine.runAndWait()
 logging.info('-------------------------------------------------------------------------')
 logging.info('TRADEX INITIALIZED')
 
-"""
+
 # AUTO LOGIN KITE AND GENERATE ACCESS TOKEN
+
 logging.info('TRADEX INITIALIZED')
 autologin()
 generate_access_token()
@@ -72,6 +74,7 @@ generate_access_token()
 logging.info('AUTO LOGIN COMPLETE AND ACCESS TOKEN UPDATED')
 engine.say("AUTO LOGIN COMPLETE AND ACCESS TOKEN UPDATED")
 engine.runAndWait()
+
 
 # AUTHORIZE CDSL TO SELL SHARES
 engine.say("C D S L AUTO AUTHORIZATION INITIALIZED")
@@ -84,7 +87,7 @@ aac = auto_authorize_cdsl()
 logging.info('C D S L AUTO AUTHORIZATION COMPLETE')
 engine.say("C D S L AUTO AUTHORIZATION COMPLETE")
 engine.runAndWait()
-"""
+
 
 print("Tradx will be using: {} for blsh algo\n".format(tradable_instruments))
 
@@ -104,6 +107,8 @@ print("\nEOD BUY: {}\n".format(to_buy))
 engine.say("GOING LIVE")
 logging.info('GOING LIVE')
 engine.runAndWait()
+
+"""
 
 while start_time < dt.datetime.now() < end_time:
 
@@ -163,16 +168,18 @@ while start_time < dt.datetime.now() < end_time:
 
         for inst in to_buy:
             ltp = tx.kite.ltp('NSE:' + str(inst))['NSE:' + str(inst)]['last_price']
-            quantity = int(max_cap_per_stock / ltp)
-            tx.place_cnc_order(inst, "buy", quantity)
-            print("\nOrder placed - {} | @ {} | quantity: {}".format(inst, ltp, quantity))
-            time.sleep(0.5)
+            quantity = 200
+            # int(max_cap_per_stock / ltp)
+            if ltp * quantity < 8000:
+                tx.place_cnc_order(inst, "buy", quantity)
+                print("\nOrder placed - {} | @ {} | quantity: {}".format(inst, ltp, quantity))
+                time.sleep(0.5)
 
-        engine.say("BUY COMPLETE")
-        logging.info("BUY COMPLETE")
-
-        engine.runAndWait()
-        buy_pending = False
+                engine.say("BUY COMPLETE")
+                logging.info("BUY COMPLETE")
+                engine.runAndWait()
+                buy_pending = False
+                break
 
     tx.idle()
 
@@ -180,3 +187,5 @@ engine.say("TRADEX SHUTTING DOWN")
 logging.info("TRADEX SHUTTING DOWN")
 
 engine.runAndWait()
+
+"""
