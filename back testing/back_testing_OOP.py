@@ -6,6 +6,8 @@ from itertools import product
 import matplotlib.pyplot as plt
 
 
+np.random.standard_normal()
+
 # Data Retrieval
 class Financial_Data:
     def __init__(self, symbol='TSLA', end=dt.datetime.today(), days=168):
@@ -61,7 +63,7 @@ class SMA_Back_tester(Financial_Data):
 
 
 sma = SMA_Back_tester()
-# sma.backtest_strategy(5, 10)
 sma.optimize_paramters(range(1, 7, 1), range(5, 15, 1))
 
 # https://gist.github.com/yhilpisch/a2048d54fea8d35b253ea6ab8ed7bba5
+
