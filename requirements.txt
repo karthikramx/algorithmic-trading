@@ -12,3 +12,4 @@ numpy~=1.19.2
 nsepy~=0.8
 future~=0.18.2
 pyttsx3~=2.90
+yfinance~=0.1.63
