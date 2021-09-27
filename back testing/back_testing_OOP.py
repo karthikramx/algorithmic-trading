@@ -16,68 +16,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-"""
-# Data Retrieval
-class Financial_Data:
-    def __init__(self, symbol='TSLA', end=dt.datetime.today(), days=168):
-        self.symbol = symbol
-        start = end - pd.Timedelta(days=days)
-        self.download_daily_data(start=start, end=end)
-        self.prepare_data()
-
-    def download_daily_data(self, start, end):
-        self.df = yf.download(self.symbol, start=start, end=end)
-
-    def prepare_data(self):
-        self.df['daily_returns'] = np.log(self.df['Adj Close'] / self.df['Adj Close'].shift(1))
-        self.df['bnh_returns'] = self.df['daily_returns'].cumsum()
-        self.df.dropna(inplace=True)
-
-    def plot_returns(self, list_of_columns):
-        self.df[list_of_columns].plot()
-        plt.show()
-
-
-class SMA_Back_tester(Financial_Data):
-
-    def prepare_indicators(self, SMA1, SMA2):
-        self.df['SMA1'] = self.df['Close'].rolling(window=SMA1).mean()
-        self.df['SMA2'] = self.df['Close'].rolling(window=SMA2).mean()
-        self.df.dropna(inplace=True)
-
-    def backtest_strategy(self, SMA1, SMA2):
-        self.prepare_indicators(SMA1, SMA2)
-        self.df['position'] = np.where(self.df['SMA1'] > self.df['SMA2'], 1, 0)
-        self.df['position'] = self.df['position'].shift(1)
-        self.df['strategy_returns'] = self.df['position'] * self.df['daily_returns']
-        self.df['strategy_returns'] = self.df['strategy_returns'].cumsum()
-        start = SMA2
-        perf = self.df[['strategy_returns', 'bnh_returns']]  # .iloc[start:].sum().apply(np.exp)
-        return perf
-
-    def plot_strategy_returns(self):
-        self.plot_returns(['bnh_returns', 'strategy_returns'])
-
-    def optimize_paramters(self, SMA1_Range, SMA2_Range):
-        self.results = pd.DataFrame()
-        for sma1, sma2 in product(SMA1_Range, SMA2_Range):
-            perf = sma.backtest_strategy(sma1, sma2)
-            self.result = pd.DataFrame({'SMA1': sma1,
-                                        'SMA2': sma2,
-                                        'bnh returns': perf['bnh_returns'],
-                                        'strategy retunrs': perf['strategy_returns']})
-            self.results = self.results.append(self.result, ignore_index=True)
-
-        print(self.results)
-
-
-sma = SMA_Back_tester()
-sma.optimize_paramters(range(1, 7, 1), range(5, 15, 1))
-
-# https://gist.github.com/yhilpisch/a2048d54fea8d35b253ea6ab8ed7bba5
-
-"""
-
 
 class FinancialData:
     def __init__(self, symbol='TSLA', end=dt.datetime.today(), days=168):
@@ -99,17 +37,19 @@ class FinancialData:
         self.data[attribute_list].plot()
         plt.show()
 
+    def plot_strategy_returns(self):
+        self.plot_data(['bnh_returns', 'strategy_returns'])
+
 
 class SMABacktester(FinancialData):
+
     def prepare_indicators(self, SMA1, SMA2):
         self.data['SMA1'] = self.data['Adj Close'].rolling(window=SMA1).mean()
         self.data['SMA2'] = self.data['Adj Close'].rolling(window=SMA2).mean()
-        self.data.dropna(inplace=True)
 
     def backtest_strategy(self, SMA1, SMA2, start=None):
         if start is None:
             start = SMA2
-        print(start)
         self.prepare_indicators(SMA1, SMA2)
         self.data['position'] = np.where(self.data['SMA1'] > self.data['SMA2'], 1, -1)
         self.data['position'] = self.data['position'].shift(1)
@@ -118,22 +58,80 @@ class SMABacktester(FinancialData):
         self.data['strategy_returns'] = self.data['strategy_returns'].cumsum()
         return performance
 
-    def plot_strategy_returns(self):
-        self.plot_data(['bnh_returns', 'strategy_returns'])
+    def plot_optimized_sma_strategy_returns(self):
+        if (len(self.results)) > 0:
+            self.optimized_sma1 = self.results.loc[0, 'SMA1']
+            self.optimized_sma2 = self.results.loc[1, 'SMA2']
+            self.backtest_strategy(self.optimized_sma1, self.optimized_sma2)
+            self.plot_strategy_returns()
 
     def optimize_parameters(self, sma1_range, sma2_range):
         self.results = pd.DataFrame()
+        print(len(self.results))
         start = max(sma2_range)
         for sma1, sma2 in product(sma1_range, sma2_range):
-            perf = sma.backtest_strategy(sma1, sma2, start=start)
+            perf = self.backtest_strategy(sma1, sma2, start=start)
             self.result = pd.DataFrame({'SMA1': sma1,
                                         'SMA2': sma2,
                                         'bnh returns': perf['daily_returns'],
                                         'strategy retunrs': perf['strategy_returns']}, index=[0, ])
             self.results = self.results.append(self.result, ignore_index=True)
         self.results.sort_values(by='strategy retunrs')
-        return self.results
+        print(self.results)
+
+class BollingerBandBacktester(FinancialData):
+    def prepare_indicators(self, window):
+        self.data['moving_avg'] = self.data['Adj Close'].rolling(window=window).mean()
+        self.data['moving_std'] = self.data['Adj Close'].rolling(window=window).std()
+
+    def backtest_strategy(self, window, start=None):
+        self.prepare_indicators(window)
+        self.data['upper_band'] = self.data['moving_avg'] + 2 * self.data['moving_std']
+        self.data['lower_band'] = self.data['moving_avg'] - 2 * self.data['moving_std']
+
+        if start is None:
+            start = window
+
+        # BUY condition
+        self.data['signal'] = np.where((self.data['Adj Close'] < self.data['lower_band']) &
+                                       (self.data['Adj Close'].shift(1) >= self.data['lower_band']), 1, 0)
+
+        # SELL condition
+        self.data['signal'] = np.where((self.data['Adj Close'] > self.data['upper_band']) &
+                                       (self.data['Adj Close'].shift(1) <= self.data['upper_band']), -1,
+                                       self.data['signal'])
+
+        self.data['position'] = self.data['signal'].replace(to_replace=0, method='ffill')
+        self.data['position'] = self.data['position'].shift()
+
+        self.data['strategy_returns'] = self.data['position'] * self.data['daily_returns']
+
+        performance = self.data[['daily_returns', 'strategy_returns']].iloc[start:].sum()
+
+        self.data['strategy_returns'] = self.data['strategy_returns'].cumsum()
+        return performance
+
+    def optimize_bollinger_band_parameters(self, windows):
+        start = max(windows)
+        self.results = pd.DataFrame()
+        for window in windows:
+            perf = self.backtest_strategy(window=window, start=start)
+            self.result = pd.DataFrame({'Window': window,
+                                        'bnh returns': perf['daily_returns'],
+                                        'strategy returns': perf['strategy_returns']}, index=[0, ])
+            self.results = self.results.append(self.result, ignore_index=True)
+        self.results.sort_values(by='strategy returns', inplace=True, ascending=False)
+        print(self.results)
+
+    def plot_optimized_bollinger_strategy_returns(self):
+        if (len(self.results)) > 0:
+            window = self.results.loc[0, 'Window']
+            self.backtest_strategy(window=window)
+            print(self.data['strategy_returns'])
+            self.plot_strategy_returns()
 
 
-sma = SMABacktester(days=1000)
-print(sma.optimize_parameters(range(5, 15, 3), range(20, 30, 5)))
+Bollinger = BollingerBandBacktester()
+Bollinger.optimize_bollinger_band_parameters(range(5, 25, 1))
+Bollinger.plot_optimized_bollinger_strategy_returns()
+
