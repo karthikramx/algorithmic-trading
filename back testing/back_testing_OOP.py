@@ -13,7 +13,7 @@ import datetime as dt
 from itertools import product
 import matplotlib.pyplot as plt
 import warnings
-
+import pyfolio as pf
 warnings.filterwarnings("ignore")
 
 
@@ -39,6 +39,10 @@ class FinancialData:
 
     def plot_strategy_returns(self):
         self.plot_data(['bnh_returns', 'strategy_returns'])
+
+    def create_simple_tear_sheet(self):
+        pf.display(pf.create_simple_tear_sheet(self.data['strategy_returns']))
+
 
 
 class SMABacktester(FinancialData):
@@ -78,6 +82,7 @@ class SMABacktester(FinancialData):
             self.results = self.results.append(self.result, ignore_index=True)
         self.results.sort_values(by='strategy retunrs')
         print(self.results)
+
 
 class BollingerBandBacktester(FinancialData):
     def prepare_indicators(self, window):
@@ -121,17 +126,20 @@ class BollingerBandBacktester(FinancialData):
                                         'strategy returns': perf['strategy_returns']}, index=[0, ])
             self.results = self.results.append(self.result, ignore_index=True)
         self.results.sort_values(by='strategy returns', inplace=True, ascending=False)
+        self.results = self.results.reset_index()
+        self.results = self.results.drop("index", axis=1)
         print(self.results)
 
     def plot_optimized_bollinger_strategy_returns(self):
         if (len(self.results)) > 0:
             window = self.results.loc[0, 'Window']
+            print("Window:", window)
             self.backtest_strategy(window=window)
-            print(self.data['strategy_returns'])
             self.plot_strategy_returns()
 
 
-Bollinger = BollingerBandBacktester()
-Bollinger.optimize_bollinger_band_parameters(range(5, 25, 1))
+Bollinger = BollingerBandBacktester(symbol="MSFT")
+Bollinger.optimize_bollinger_band_parameters(range(1, 50, 1))
 Bollinger.plot_optimized_bollinger_strategy_returns()
+Bollinger.create_simple_tear_sheet()
 
